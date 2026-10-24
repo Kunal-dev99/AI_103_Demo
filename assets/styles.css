@@ -264,3 +264,7 @@ td.no { color: var(--error); font-weight: 600; }
 .coverage td, .coverage th { font-size: .8rem; }
 .recap { border-left: 4px solid var(--ok); }
 details summary { cursor: pointer; font-weight: 600; }
+
+/* long identifiers (endpoints, model ids, JSON paths) must not widen the page */
+main p, main li, main dd, main td, main legend, main label, main figcaption, .turn-text, .viz-node { overflow-wrap: anywhere; }
+.two-col > div { min-width: 0; }
