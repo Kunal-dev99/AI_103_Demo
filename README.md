@@ -22,7 +22,9 @@ python3 -m http.server 8080      # or: npm start
 # open http://localhost:8080
 ```
 
-It deploys as-is to GitHub Pages, Azure Static Web Apps or any CDN.
+It deploys as-is to GitHub Pages, Azure Static Web Apps or any CDN. `.github/workflows/pages.yml` validates
+every lab and publishes the site to GitHub Pages on each push to `main` (one-time setup: repository
+**Settings → Pages → Source: GitHub Actions**).
 
 ## What every objective page contains
 
