@@ -1,0 +1,13 @@
+{
+  "name": "ai-103-concept-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive concept visualizers and simulators for every subtopic of Microsoft exam AI-103.",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "validate": "node tools/validate.mjs",
+    "smoke": "node tools/smoke.mjs",
+    "test": "node tools/validate.mjs && node tools/smoke.mjs"
+  }
+}
