@@ -56,7 +56,7 @@ export function createLab(mod, viz) {
     api.load(sim.samples[+sampleSel.value].values, true);
     sampleSel.value = '';
   });
-  const speedSel = h('select', { 'aria-label': 'Animation speed' }, h('option', { value: 650 }, 'Normal speed'), h('option', { value: 1400 }, 'Slow'), h('option', { value: 0 }, 'Instant'));
+  const speedSel = h('select', { 'aria-label': 'Animation speed' }, h('option', { value: 1300 }, 'Normal speed'), h('option', { value: 2600 }, 'Slow'), h('option', { value: 0 }, 'Instant'));
   const runBtn = h('button.btn.primary', { type: 'button', onclick: () => api.run() }, '▶ Run');
   const stepBtn = h('button.btn', { type: 'button', onclick: () => api.step() }, 'Step ›');
   const resetBtn = h('button.btn.ghost', { type: 'button', onclick: () => api.reset() }, 'Reset');
@@ -130,6 +130,7 @@ export function createLab(mod, viz) {
     viz.clearRun();
     clear(stepsEl); clear(outEl); clear(metricsEl);
     state.result = compute();
+    if (viz.setResult) viz.setResult(state.result);
     state.played = 0;
     state.runNo++;
   }

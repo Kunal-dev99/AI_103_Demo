@@ -1,16 +1,17 @@
-// Validates syllabus coverage and every content module's contract.
-// Usage: node tools/validate.mjs [subtopicId ...]
-// With no arguments, checks every subtopic in src/syllabus.js and fails on gaps or orphans.
+// Validates agenda coverage and every lab module's contract.
+// Usage: node tools/validate.mjs [agendaId ...]
+// With no arguments, checks every topic in src/agenda.js and fails on gaps or orphans.
 import { readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
-import { ALL_SUBTOPICS, findSubtopic } from '../src/syllabus.js';
+import { AGENDA, findAgenda } from '../src/agenda.js';
+import { findSubtopic } from '../src/syllabus.js';
 import { BLOCK_SCHEMAS, MODES, defaultsOf } from '../src/engine/contract.js';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const contentDir = path.join(root, 'content');
 const only = process.argv.slice(2);
-const targets = only.length ? only : ALL_SUBTOPICS.map(s => s.id);
+const targets = only.length ? only : AGENDA.map(a => a.id);
 
 const problems = [];
 const warn = [];
@@ -18,7 +19,8 @@ const fail = (id, msg) => problems.push(`${id}: ${msg}`);
 
 if (!only.length) {
   const files = readdirSync(contentDir).filter(f => f.endsWith('.js')).map(f => f.slice(0, -3));
-  for (const f of files) if (!findSubtopic(f)) fail(f, 'orphan content module (not in syllabus.js)');
+  for (const f of files) if (!findAgenda(f)) fail(f, 'orphan content module (not in src/agenda.js)');
+  for (const a of AGENDA) for (const o of a.objectives) if (!findSubtopic(o)) fail(a.id, `agenda maps to unknown AI-103 objective ${o}`);
 }
 
 const labs = new Map();
@@ -78,7 +80,8 @@ for (const id of targets) {
   else if (labs.has(m.lab)) fail(id, `lab name "${m.lab}" duplicates ${labs.get(m.lab)}: every subtopic needs its own lab`);
   else labs.set(m.lab, id);
   if (!Array.isArray(m.services) || !m.services.length || m.services.some(s => !s.name || !/^https:\/\/learn\.microsoft\.com\//.test(s.url))) fail(id, 'services[] with name + learn.microsoft.com url required');
-  for (const k of ['prereqs', 'next']) for (const r of m[k] || []) if (!findSubtopic(r)) fail(id, `${k} references unknown subtopic ${r}`);
+  for (const k of ['prereqs', 'next']) for (const r of m[k] || []) if (!findAgenda(r)) fail(id, `${k} references unknown agenda topic ${r}`);
+  if (!m.workbench || !existsSync(path.join(root, 'src', 'workbenches', `${m.workbench}.js`))) fail(id, `workbench "${m.workbench}" needs src/workbenches/<name>.js`);
   const c = m.concept || {};
   for (const k of ['plain', 'technical', 'useCase']) if (!c[k] || c[k].length < 80) fail(id, `concept.${k} missing or too short`);
   if (!Array.isArray(c.terms) || c.terms.length < 2) fail(id, 'concept.terms needs at least 2 [term, definition] pairs');
@@ -145,4 +148,4 @@ if (problems.length) {
   console.error(`\n✗ ${problems.length} problem(s):\n` + problems.map(p => '  - ' + p).join('\n'));
   process.exit(1);
 }
-console.log(`✓ ${targets.length} subtopic module(s) valid${only.length ? '' : ` — full coverage of ${ALL_SUBTOPICS.length} official subtopics`}.`);
+console.log(`✓ ${targets.length} lab module(s) valid${only.length ? '' : ` — all ${AGENDA.length} agenda topics covered`}.`);

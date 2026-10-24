@@ -1,14 +1,14 @@
 // Browser smoke test: serves the site, opens every page, runs every simulator,
 // loads every debug scenario, answers the quiz, and fails on console errors or
 // horizontal page overflow at phone width.
-// Usage: node tools/smoke.mjs [subtopicId ...]   (SCREENSHOTS=dir to save screenshots)
+// Usage: node tools/smoke.mjs [agendaId ...]   (SCREENSHOTS=dir to save screenshots)
 import { createServer } from 'node:http';
 import { readFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { ALL_SUBTOPICS } from '../src/syllabus.js';
+import { AGENDA } from '../src/agenda.js';
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -26,7 +26,7 @@ const server = createServer(async (req, res) => {
 }).listen(0);
 const base = `http://127.0.0.1:${server.address().port}/index.html`;
 
-const ids = process.argv.slice(2).length ? process.argv.slice(2) : ALL_SUBTOPICS.map(s => s.id).filter(id => existsSync(path.join(root, 'content', `${id}.js`)));
+const ids = process.argv.slice(2).length ? process.argv.slice(2) : AGENDA.map(a => a.id).filter(id => existsSync(path.join(root, 'content', `${id}.js`)));
 const shots = process.env.SCREENSHOTS;
 if (shots) await mkdir(shots, { recursive: true });
 
@@ -44,10 +44,10 @@ async function newPage(width) {
 const overflow = page => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 const page = await newPage(1280);
-for (const route of ['#/', '#/d/1', '#/t/2.2', '#/coverage']) {
+for (const route of ['#/', '#/coverage']) {
   await page.goto(`${base}${route}`);
   await page.waitForSelector('main h1');
-  if (route === '#/coverage') await page.waitForFunction(() => document.querySelectorAll('.coverage tbody tr').length > 70, null, { timeout: 30000 }).catch(() => failures.push('coverage table incomplete'));
+  if (route === '#/coverage') await page.waitForFunction(n => document.querySelectorAll('.coverage tbody tr').length >= n, AGENDA.length, { timeout: 30000 }).catch(() => failures.push('coverage table incomplete'));
 }
 
 for (const id of ids) {
@@ -55,7 +55,9 @@ for (const id of ids) {
   try {
     await page.goto(`${base}#/s/${id}`);
     await page.waitForSelector('.lab .controls', { timeout: 10000 });
-    // views
+    await page.waitForSelector('.workbench', { timeout: 10000 });
+    // architecture / code views
+    await page.click('details.arch summary');
     for (const v of ['architectural', 'implementation', 'conceptual']) await page.click(`.tab[data-view="${v}"]`);
     await page.click('.viz-actions .btn:first-child'); // expand
     await page.click('.viz-node');
@@ -109,4 +111,4 @@ if (failures.length) {
   console.error(`✗ ${failures.length} smoke failure(s):\n` + failures.map(f => '  - ' + f).join('\n'));
   process.exit(1);
 }
-console.log(`✓ smoke test passed for ${ids.length} lab page(s) plus home, domain, topic and coverage pages.`);
+console.log(`✓ smoke test passed for ${ids.length} lab page(s) plus home and coverage pages.`);
