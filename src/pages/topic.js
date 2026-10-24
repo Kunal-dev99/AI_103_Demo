@@ -1,32 +1,44 @@
-// Subtopic page: Understand → Visualize → Simulate → Compare → Debug → Apply & assess → Recap.
+// Agenda topic page: Understand → Workbench (visualize + simulate) → Compare → Debug → Apply & assess → Recap.
 import { h, clear, append, fmtValue } from '../engine/dom.js';
 import { createVisualizer } from '../engine/visualizer.js';
 import { createLab } from '../engine/lab.js';
 import { getProgress, setProgress, isComplete } from '../engine/store.js';
-import { findSubtopic, ALL_SUBTOPICS, SOURCE } from '../syllabus.js';
+import { AGENDA, findAgenda, objectiveText } from '../agenda.js';
+import { SOURCE } from '../syllabus.js';
 
 const SECTIONS = [
-  ['understand', 'A. Understand'], ['visualize', 'B. Visualize'], ['simulate', 'C. Simulate'],
+  ['understand', 'A. Understand'], ['workbench', 'B–C. Visualize & simulate'],
   ['compare', 'D. Experiment & compare'], ['debug', 'E. Debug'], ['assess', 'F. Apply & assess'],
 ];
 
 const link = id => {
-  const s = findSubtopic(id);
-  return s ? h('a', { href: `#/s/${id}` }, `${id} ${s.text}`) : null;
+  const a = findAgenda(id);
+  return a ? h('a', { href: `#/s/${id}` }, a.title) : null;
 };
 
-export async function renderSubtopic(root, id) {
-  const meta = findSubtopic(id);
-  if (!meta) { root.appendChild(h('p', 'Unknown subtopic.')); return; }
-  let mod;
-  try { mod = (await import(`../../content/${id}.js`)).default; }
-  catch (e) {
+// Forward lab events to every view that listens (workbench + architecture diagram).
+function fanout(views) {
+  const call = (fn, ...args) => views.forEach(v => v && v[fn] && v[fn](...args));
+  return {
+    setParams: p => call('setParams', p), setResult: r => call('setResult', r), setStep: st => call('setStep', st),
+    clearRun: () => call('clearRun'), reset: () => call('reset'), flash: id => call('flash', id), select: id => call('select', id),
+  };
+}
+
+export async function renderTopic(root, id) {
+  const meta = findAgenda(id);
+  if (!meta) { root.appendChild(h('p', 'Unknown topic.')); return; }
+  let mod, wbMod;
+  try {
+    mod = (await import(`../../content/${id}.js`)).default;
+    wbMod = await import(`../workbenches/${mod.workbench}.js`);
+  } catch (e) {
     root.appendChild(h('div.alert.tone-error', `The lab for ${id} could not be loaded: ${e.message}`));
     return;
   }
 
-  const idx = ALL_SUBTOPICS.findIndex(s => s.id === id);
-  const prev = ALL_SUBTOPICS[idx - 1], next = ALL_SUBTOPICS[idx + 1];
+  const idx = AGENDA.findIndex(a => a.id === id);
+  const prev = AGENDA[idx - 1], next = AGENDA[idx + 1];
   const progressEl = h('div.progress-pills');
   const refreshProgress = () => {
     const p = getProgress(id);
@@ -40,13 +52,10 @@ export async function renderSubtopic(root, id) {
   refreshProgress();
 
   const header = h('header.page-head',
-    h('nav.crumbs', { 'aria-label': 'Breadcrumb' },
-      h('a', { href: '#/' }, 'Home'), ' › ',
-      h('a', { href: `#/d/${meta.domain.id}` }, `${meta.domain.id}. ${meta.domain.title}`), ' › ',
-      h('a', { href: `#/t/${meta.topic.id}` }, `${meta.topic.id} ${meta.topic.title}`)),
-    h('p.eyebrow', `Objective ${id} • Lab: ${mod.lab}`),
-    h('h1', meta.text),
-    h('p.small', 'Official objective text from ', h('a', { href: SOURCE.url, target: '_blank', rel: 'noopener' }, SOURCE.outlineVersion), '.'),
+    h('nav.crumbs', { 'aria-label': 'Breadcrumb' }, h('a', { href: '#/' }, 'Home'), ' › ', `Topic ${idx + 1} of ${AGENDA.length}`),
+    h('p.eyebrow', `Lab: ${mod.lab}`),
+    h('h1', meta.title),
+    h('p.lead', meta.summary),
     progressEl,
     h('nav.section-nav', { 'aria-label': 'Sections' }, SECTIONS.map(([a, l]) => h('a', { href: `#/s/${id}`, onclick: e => { e.preventDefault(); document.getElementById(`sec-${a}`).scrollIntoView({ behavior: 'smooth' }); } }, l))));
 
@@ -57,16 +66,22 @@ export async function renderSubtopic(root, id) {
       h('div', h('h3', 'Real-world use case'), h('p', c.useCase),
         h('h3', 'Key terms'), h('dl.kv', c.terms.map(([t, d]) => [h('dt', t), h('dd', d)])))),
     h('div.two-col',
-      h('div', h('h3', 'Prerequisites'), mod.prereqs.length ? h('ul', mod.prereqs.map(p => h('li', link(p)))) : h('p.small', 'None — this is an entry point.')),
-      h('div', h('h3', 'Azure services & documentation'), h('ul', mod.services.map(s => h('li', h('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.name)))))));
+      h('div', h('h3', 'What this lab covers'), h('ol', meta.stages.map(x => h('li', x))),
+        h('h3', 'Related AI-103 objectives'), h('ul.small', meta.objectives.map(o => h('li', h('strong', o), ' ', objectiveText(o)))),
+        h('p.small', 'Source: ', h('a', { href: SOURCE.url, target: '_blank', rel: 'noopener' }, SOURCE.outlineVersion))),
+      h('div', h('h3', 'Build on'), mod.prereqs.length ? h('ul', mod.prereqs.map(p => h('li', link(p)))) : h('p.small', 'Start here.'),
+        h('h3', 'Azure services & documentation'), h('ul', mod.services.map(s => h('li', h('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.name)))))));
 
-  const viz = createVisualizer(mod);
+  const wb = wbMod.createWorkbench(mod);
+  const graph = createVisualizer(mod);
+  const viz = fanout([wb, graph]);
   const lab = createLab(mod, viz);
 
-  const visualize = section('visualize', 'B. Explore the visualizer',
-    h('p.small', 'Switch between conceptual, architecture and implementation views. Diagram nodes change as you change the simulator configuration below. Expand stages to see what happens inside each component.'),
-    viz.el);
-  const simulate = section('simulate', `C. Run the simulator — ${mod.lab}`, lab.el);
+  const workbench = section('workbench', `B–C. ${mod.lab}`,
+    h('p.small', 'Configure the lab below, then Run (all stages) or Step (one stage at a time). The workbench shows each stage happening; click anything in it to inspect it.'),
+    wb.el, lab.el,
+    h('details.arch', h('summary', 'Architecture and code views'),
+      h('p.small', 'The same pipeline as Azure resources and SDK calls. Nodes light up as the simulation runs.'), graph.el));
 
   // ---- D. compare ----
   const histEl = h('div');
@@ -88,7 +103,7 @@ export async function renderSubtopic(root, id) {
         h('td', `${r.result.steps.filter(s => s.status === 'error').length} / ${r.result.steps.filter(s => s.status === 'warn').length}`),
         h('td', radio('A', r.n, pickA, v => { pickA = v; drawHistory(); })),
         h('td', radio('B', r.n, pickB, v => { pickB = v; drawHistory(); })),
-        h('td', h('button.btn.small', { type: 'button', onclick: () => { lab.load(r.params); document.getElementById('sec-simulate').scrollIntoView({ behavior: 'smooth' }); } }, 'Restore settings'))))))));
+        h('td', h('button.btn.small', { type: 'button', onclick: () => { lab.load(r.params); document.getElementById('sec-workbench').scrollIntoView({ behavior: 'smooth' }); } }, 'Restore settings'))))))));
     const A = hist.find(r => r.n === pickA), B = hist.find(r => r.n === pickB);
     if (A && B && A !== B) histEl.appendChild(diffRuns(mod, A, B));
   };
@@ -118,7 +133,7 @@ export async function renderSubtopic(root, id) {
       h('p', h('strong', 'Symptom: '), d.symptom),
       h('p.small', `The highlighted component is “${d.node}”. Now change the configuration in the simulator and run again. The scenario is solved when the run has no errors and fewer problems than now.`)]);
     viz.flash(d.node);
-    document.getElementById('sec-visualize').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('sec-workbench').scrollIntoView({ behavior: 'smooth' });
   }
   lab.onRun((p, res) => {
     if (!activeScenario) return;
@@ -148,7 +163,7 @@ export async function renderSubtopic(root, id) {
     solutionEl.appendChild(h('details',
       h('summary', 'Solution walkthrough'),
       h('ol', ch.solution.map(x => h('li', x))),
-      h('button.btn.small', { type: 'button', onclick: () => { lab.load(ch.solutionValues, true); document.getElementById('sec-simulate').scrollIntoView({ behavior: 'smooth' }); } }, 'Load the solution settings')));
+      h('button.btn.small', { type: 'button', onclick: () => { lab.load(ch.solutionValues, true); document.getElementById('sec-workbench').scrollIntoView({ behavior: 'smooth' }); } }, 'Load the solution settings')));
   };
   showSolutionBtn();
   const checkChallenge = () => {
@@ -196,9 +211,9 @@ export async function renderSubtopic(root, id) {
     h('div.two-col',
       h('div', h('h3', 'Build on'), mod.prereqs.length ? h('ul', mod.prereqs.map(p => h('li', link(p)))) : h('p.small', '—')),
       h('div', h('h3', 'Go further'), mod.next.length ? h('ul', mod.next.map(p => h('li', link(p)))) : h('p.small', '—'))),
-    h('nav.pager', prev ? h('a.btn', { href: `#/s/${prev.id}` }, `‹ ${prev.id}`) : h('span'), next ? h('a.btn', { href: `#/s/${next.id}` }, `${next.id} ›`) : h('span')));
+    h('nav.pager', prev ? h('a.btn', { href: `#/s/${prev.id}` }, `‹ ${prev.short}`) : h('span'), next ? h('a.btn', { href: `#/s/${next.id}` }, `${next.short} ›`) : h('span')));
 
-  root.append(header, understand, visualize, simulate, compare, debug, assess, recap);
+  root.append(header, understand, workbench, compare, debug, assess, recap);
   return () => window.removeEventListener('progress', refreshProgress);
 }
 

@@ -1,17 +1,24 @@
 # Content authoring guide
 
-Every official AI-103 subtopic (see `src/syllabus.js`) has exactly one content module at
-`content/<subtopicId>.js` (e.g. `content/2.1.2.js`). The module is plain data plus pure
-functions. **No DOM access, no network, no imports other than `../src/engine/util.js`**:
-modules are also loaded by `tools/validate.mjs` in Node.
+Every agenda topic (see `src/agenda.js`) has exactly one content module at `content/<id>.js`
+and one visual workbench at `src/workbenches/<workbench>.js`.
 
-The full reference implementation is `content/5.2.1.js`. Read it before writing a module.
+- The **content module** is plain data plus pure functions: **no DOM access, no network, no imports
+  other than `../src/engine/util.js`**. It is also loaded by `tools/validate.mjs` in Node.
+  It sets `workbench: '<name>'` and its `run()` result may carry a `view` object with whatever the
+  workbench needs to draw.
+- The **workbench** is DOM code. `createWorkbench(mod)` returns
+  `{ el, setParams(p), setResult(result), setStep(step), clearRun(), reset(), flash(stageId), select(stageId) }`.
+  `setParams` runs on every control change (preview the input there), `setResult` at the start of a run,
+  `setStep` once per step as the run plays. Reuse `src/workbenches/page.js` helpers. Styles go in `assets/wb-<name>.css`.
+
+The reference implementation is `content/ingestion.js` + `src/workbenches/ingestion.js`.
 
 Run `node tools/validate.mjs <id> [<id> ...]` until it prints ✓.
 
 ## Design rules (non-negotiable)
 
-1. **Tailored lab per subtopic.** Each module defines its own `lab` name (unique across the
+1. **Tailored lab per topic.** Each module defines its own `lab` name (unique across the
    site), its own controls, its own data, and its own `run()` logic modelling *that* concept.
    Do not copy a generic "pipeline with N stages" between modules. Ask: what would an engineer
    actually configure and inspect for this skill? Model that.
@@ -46,10 +53,11 @@ Run `node tools/validate.mjs <id> [<id> ...]` until it prints ✓.
 import { rng, clamp, round, step, metric, estTokens, overlap, coverage, hasError } from '../src/engine/util.js';
 
 export default {
-  id: '2.1.2',                          // must equal file name
-  lab: 'RAG pipeline bench',            // unique name of this subtopic's simulator
+  id: 'fields',                         // must equal file name and an agenda id
+  lab: 'RAG pipeline bench',            // unique name of this topic's simulator
   services: [{ name, url }],            // ≥1, url must start https://learn.microsoft.com/
-  prereqs: ['1.1.3'], next: ['5.1.2'],  // subtopic ids from syllabus.js (may be empty)
+  workbench: 'fields',                  // src/workbenches/fields.js
+  prereqs: ['ingestion'], next: [],     // agenda ids (may be empty)
 
   concept: {
     plain: '…',        // ≥80 chars, plain-language explanation

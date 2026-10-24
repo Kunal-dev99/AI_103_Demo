@@ -1,7 +1,7 @@
-// Hash router. Routes: #/  #/d/<domain>  #/t/<topic>  #/s/<subtopic>  #/coverage
+// Hash router. Routes: #/  #/s/<agendaTopicId>  #/coverage
 import { clear, h } from './engine/dom.js';
-import { renderHome, renderDomain, renderTopic, renderCoverage, renderNav } from './pages/overview.js';
-import { renderSubtopic } from './pages/subtopic.js';
+import { renderHome, renderCoverage, renderNav } from './pages/overview.js';
+import { renderTopic } from './pages/topic.js';
 
 const main = document.getElementById('main');
 const nav = document.getElementById('nav');
@@ -13,12 +13,10 @@ async function route() {
   clear(main);
   renderNav(nav, hash);
   document.body.classList.remove('nav-open');
-  const [, kind, id] = hash.match(/^#\/(\w+)?\/?([\d.]+)?/) || [];
+  const [, kind, id] = hash.match(/^#\/(\w+)?\/?([\w-]+)?/) || [];
   try {
     if (!kind) renderHome(main);
-    else if (kind === 'd') renderDomain(main, id);
-    else if (kind === 't') renderTopic(main, id);
-    else if (kind === 's') cleanup = await renderSubtopic(main, id);
+    else if (kind === 's') cleanup = await renderTopic(main, id);
     else if (kind === 'coverage') await renderCoverage(main);
     else main.appendChild(h('p', 'Page not found. ', h('a', { href: '#/' }, 'Go home')));
   } catch (e) {
@@ -26,7 +24,7 @@ async function route() {
     main.appendChild(h('div.alert.tone-error', 'Something went wrong rendering this page: ' + e.message));
   }
   const title = main.querySelector('h1');
-  document.title = title ? `${title.textContent.slice(0, 60)} · AI-103 Concept Lab` : 'AI-103 Concept Lab';
+  document.title = title ? `${title.textContent.slice(0, 60)} · Document AI Concept Lab` : 'Document AI Concept Lab';
   window.scrollTo(0, 0);
   main.focus({ preventScroll: true });
 }
