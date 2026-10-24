@@ -37,7 +37,7 @@ const R = {
       h('span.bar-track',
         h(`span.bar-fill.tone-${tone(it.tone || 'info')}`, { style: { width: w + '%' } }),
         b.threshold != null ? h('span.bar-threshold', { style: { left: (b.threshold / (b.items[0].max || 1)) * 100 + '%' }, title: 'threshold' }) : null),
-      h('span.bar-value', it.value <= 1 && !it.max ? it.value.toFixed(2) : String(it.value)),
+      h('span.bar-value', { title: String(it.value) }, Number.isInteger(it.value) ? String(it.value) : (+it.value).toFixed(2)),
       it.note ? h('span.bar-note', it.note) : null);
   }))),
 
