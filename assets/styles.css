@@ -270,9 +270,10 @@ main p, main li, main dd, main td, main legend, main label, main figcaption, .tu
 .two-col > div { min-width: 0; }
 
 /* ---------- agenda home & nav ---------- */
-.agenda-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.agenda-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 700px) { .agenda-grid { grid-template-columns: minmax(0, 1fr); } }
 .agenda-card { position: relative; padding-top: 18px; }
-.agenda-icon { font-size: 1.8rem; color: var(--accent); line-height: 1; }
+.agenda-icon { display: block; font-size: 1.8rem; color: var(--accent); line-height: 1; margin-bottom: 6px; }
 .agenda-card h3 { margin: 6px 0; }
 .stage-list { margin: 8px 0 0; padding-left: 18px; }
 .nav-agenda { list-style: none; padding: 0; margin: 8px 0 14px; display: grid; gap: 4px; }
