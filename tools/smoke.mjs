@@ -56,6 +56,14 @@ for (const id of ids) {
     await page.goto(`${base}#/s/${id}`);
     await page.waitForSelector('.lab .controls', { state: 'attached', timeout: 10000 });
     await page.waitForSelector('.workbench', { timeout: 10000 });
+    // concept explainer: every scene, notes toggle, back
+    if (await page.locator('.explainer').count()) {
+      const scenes = await page.locator('.ex-seg').count();
+      if (scenes < 4) failures.push(`${id}: explainer has only ${scenes} scenes`);
+      await page.click('.ex-notes-btn');
+      for (let i = 1; i < scenes; i++) await page.click('.ex-next');
+      await page.click('.ex-back');
+    } else failures.push(`${id}: no concept explainer`);
     // architecture / code views
     await page.click('details.arch summary');
     for (const v of ['architectural', 'implementation', 'conceptual']) await page.click(`.tab[data-view="${v}"]`);
