@@ -96,6 +96,17 @@ for (const id of ids) {
     if (!ok) failures.push(`${id}: solution settings did not pass the challenge in the UI`);
     const nq = await page.locator('.quiz-q').count();
     for (let i = 0; i < nq; i++) await page.locator('.quiz-q').nth(i).locator('.quiz-opt').first().click();
+    // exam-style scenarios: play each correct option (instant pace) and expect a "Correct" verdict
+    await page.selectOption('.lab select[aria-label="Animation speed"]', '0');
+    const nsc = await page.locator('.sc-card').count();
+    if (nsc < 4) failures.push(`${id}: only ${nsc} exam-style scenarios`);
+    const mod = (await import(path.join(root, 'content', `${id}.js`))).default;
+    for (let i = 0; i < nsc; i++) {
+      const correct = mod.scenarios[i].options.findIndex(o => o.correct);
+      await page.locator('.sc-card').nth(i).locator('.sc-opt').nth(correct).click();
+      await page.waitForFunction(() => /Correct ·/.test(document.querySelector('.scenario-banner').textContent), null, { timeout: 15000 })
+        .catch(() => failures.push(`${id}: scenario ${i + 1} correct option did not show a Correct verdict`));
+    }
     if (shots) await page.screenshot({ path: path.join(shots, `${id}.png`), fullPage: false });
   } catch (e) {
     failures.push(`${id}: ${e.message.split('\n')[0]}`);

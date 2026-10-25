@@ -388,6 +388,83 @@ export default {
     solutionValues: { document: 'report', model: 'cu', output: 'markdown', format: 'pdf', deskew: true },
   },
 
+  // Exam-style scenarios: original cases written to the AI-103 objectives (not real exam questions).
+  // Picking an option loads its settings into the lab and plays it, so learners see the consequence.
+  scenarios: [
+    {
+      id: 'two-column-rag', objective: '5.1.4',
+      title: 'Research reports for a RAG index',
+      stem: 'Your team indexes scanned two-column research reports so an agent can answer questions about them. Testers say retrieved passages mix sentences from both columns, and tables come back as loose numbers.',
+      question: 'What should you change in the ingestion step?',
+      options: [
+        { label: 'Analyze with a Content Understanding document analyzer and keep its markdown output', values: { document: 'report', model: 'cu', output: 'markdown' }, correct: true,
+          why: 'Layout analysis follows the columns and keeps the table as a markdown table, so chunks contain whole sentences and intact rows.' },
+        { label: 'Keep prebuilt-read and lower the confidence threshold to 0.5', values: { document: 'report', model: 'read', threshold: 0.5 },
+          why: 'Confidence was never the problem: OCR-only output has no column detection or tables, so the order stays wrong.' },
+        { label: 'Keep prebuilt-read but request markdown output', values: { document: 'report', model: 'read', output: 'markdown' },
+          why: 'Markdown comes from layout analysis. prebuilt-read cannot produce it, so the call fails.' },
+        { label: 'Store the raw JSON from prebuilt-read and chunk it as-is', values: { document: 'report', model: 'read', output: 'json' },
+          why: 'The text is already in the wrong order before chunking; no chunking strategy fixes interleaved columns.' },
+      ],
+    },
+    {
+      id: 'sideways-receipts', objective: '5.2.1',
+      title: 'Expense receipts from a phone app',
+      stem: 'Employees photograph receipts with a mobile app. Many photos are taken sideways. Totals come back with very low confidence and the lines are in the wrong order.',
+      question: 'What is the best first fix?',
+      options: [
+        { label: 'Correct the page orientation before (or as part of) analysis', values: { document: 'receipt', format: 'jpeg', deskew: true }, correct: true,
+          why: 'Once the page is upright, OCR confidence recovers and reading order is right. Fix capture problems upstream rather than lowering the bar.' },
+        { label: 'Lower the confidence threshold so the totals are accepted', values: { document: 'receipt', format: 'jpeg', deskew: false, threshold: 0.5 },
+          why: 'You would auto-accept text read sideways. The order is still scrambled and errors flow downstream.' },
+        { label: 'Ask the app to upload the original HEIC files instead', values: { document: 'receipt', format: 'heic', deskew: false },
+          why: 'HEIC is not accepted in this lab, so the request fails before any OCR runs.' },
+      ],
+    },
+    {
+      id: 'checkboxes', objective: '5.2.1',
+      title: 'Which box is ticked?',
+      stem: 'An onboarding form has tick boxes for “New customer” and “Existing customer”. Your current pipeline returns all the printed text, but nobody can tell which box was ticked.',
+      question: 'What should you use?',
+      options: [
+        { label: 'Layout analysis (Content Understanding document analyzer), which returns selection marks with their state', values: { document: 'form', model: 'cu' }, correct: true,
+          why: 'Layout returns checkboxes as selection marks with state selected or unselected.' },
+        { label: 'OCR only (prebuilt-read) with a higher confidence threshold', values: { document: 'form', model: 'read', threshold: 0.95 },
+          why: 'OCR reads the labels next to the boxes but has no concept of a checkbox or its state.' },
+        { label: 'OCR only, but ask for markdown output', values: { document: 'form', model: 'read', output: 'markdown' },
+          why: 'Markdown needs layout analysis, so this fails, and the checkbox state is still missing.' },
+      ],
+    },
+    {
+      id: 'fax-totals', objective: '5.2.1',
+      title: 'Faxed invoices with odd totals',
+      stem: 'A supplier still faxes invoices. Extracted totals sometimes look like “1,24O.5O” (letter O instead of zero), and those values break the finance import.',
+      question: 'What is the most robust approach?',
+      options: [
+        { label: 'Improve capture (denoise or rescan at higher resolution) and keep validating numbers, sending failures to review', values: { document: 'fax', format: 'tiff', enhance: true }, correct: true,
+          why: 'Cleaner input removes most O/0 confusion, and validation still catches what slips through.' },
+        { label: 'Keep the current scans; the values have high enough confidence', values: { document: 'fax', format: 'tiff', enhance: false },
+          why: 'Watch the OCR step: the misread lines stay and the totals are still malformed.' },
+        { label: 'Switch to OCR-only analysis to make it faster', values: { document: 'fax', format: 'tiff', enhance: false, model: 'read' },
+          why: 'Speed is not the issue. The characters are still misread, and you lose the table structure too.' },
+      ],
+    },
+    {
+      id: 'locked-pdf', objective: '5.1.4',
+      title: 'Contracts that never get indexed',
+      stem: 'Some contract PDFs never appear in your search index. The ingestion log shows the analyze call failing immediately for those files.',
+      question: 'What should you do?',
+      options: [
+        { label: 'Remove the password protection upstream, then submit a normal PDF', values: { document: 'invoice', format: 'pdf' }, correct: true,
+          why: 'Encrypted PDFs cannot be read by the service. Unlocking them in the intake system fixes ingestion.' },
+        { label: 'Retry the same password-protected file with exponential back-off', values: { document: 'invoice', format: 'pdf-locked' },
+          why: 'Retrying helps with throttling or transient errors, not with content the service cannot open.' },
+        { label: 'Switch the encrypted file to the OCR-only model', values: { document: 'invoice', format: 'pdf-locked', model: 'read' },
+          why: 'Every model rejects an encrypted PDF; the model choice does not matter here.' },
+      ],
+    },
+  ],
+
   quiz: [
     { q: 'You index scanned two-column research reports for RAG. Retrieved chunks mix sentences from both columns. What should you change first?', options: ['Lower the confidence threshold', 'Use layout analysis (Content Understanding or prebuilt-layout) so reading order follows columns', 'Increase chunk overlap', 'Use a larger embedding model'], answer: 1, why: 'The text is already wrong before chunking: without layout, lines are not ordered by column.' },
     { q: 'A form has tick boxes for "New" and "Existing" customer. Which output tells you which one is ticked?', options: ['Word confidence', 'Selection marks from layout analysis', 'The page angle', 'The markdown heading level'], answer: 1, why: 'Layout returns selection marks with state selected / unselected.' },

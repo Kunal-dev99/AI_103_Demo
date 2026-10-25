@@ -9,7 +9,7 @@ import { SOURCE } from '../syllabus.js';
 
 const SECTIONS = [
   ['explain', '🎞️ See the concept'], ['understand', '💡 Understand'], ['workbench', '🧪 Workbench'],
-  ['compare', '⚖️ Compare'], ['debug', '🐞 Debug'], ['assess', '🏆 Challenge & quiz'],
+  ['scenarios', '🎓 Exam scenarios'], ['compare', '⚖️ Compare'], ['debug', '🐞 Debug'], ['assess', '🏆 Challenge & quiz'],
 ];
 
 const link = id => {
@@ -50,6 +50,7 @@ export async function renderTopic(root, id) {
       h(`span.chip.${p.challenge ? 'tone-ok' : 'tone-muted'}`, p.challenge ? '✓ Challenge' : 'Challenge'),
       h(`span.chip.${p.quizTotal ? 'tone-ok' : 'tone-muted'}`, p.quizTotal ? `Quiz ${p.quizCorrect}/${p.quizTotal}` : 'Quiz'),
       h(`span.chip.${(p.debugSolved || []).length ? 'tone-ok' : 'tone-muted'}`, `Debug ${(p.debugSolved || []).length}/${mod.debug.length}`),
+      mod.scenarios ? h(`span.chip.${(p.scenariosCorrect || []).length ? 'tone-ok' : 'tone-muted'}`, `Scenarios ${(p.scenariosCorrect || []).length}/${mod.scenarios.length}`) : null,
       isComplete(p) ? h('span.chip.tone-ok', '★ Complete') : null]);
   };
   window.addEventListener('progress', refreshProgress);
@@ -111,6 +112,66 @@ export async function renderTopic(root, id) {
     new MutationObserver(sync).observe(wbCaption, { childList: true, characterData: true, subtree: true });
     sync();
   }
+
+  // ---- Exam-style scenarios: each option plays in the workbench ----
+  const scenarioBanner = h('div.scenario-banner', { hidden: true, 'aria-live': 'polite' });
+  workbench.insertBefore(scenarioBanner, lab.toolbarEl);
+  let pendingScenario = null;
+  const letter = i => String.fromCharCode(65 + i);
+  const scenarioCards = (mod.scenarios || []).map((sc, si) => {
+    const verdictEl = h('div.sc-verdict');
+    const opts = sc.options.map((o, oi) => h('button.sc-opt', { type: 'button', onclick: () => play(sc, si, oi) },
+      h('span.sc-letter', letter(oi)), h('span', o.label)));
+    const card = h('article.sc-card', { id: `sc-${sc.id}` },
+      h('div.sc-head', h('span.sc-num', `Scenario ${si + 1}`), h('span.exam-obj', { title: objectiveText(sc.objective) }, sc.objective)),
+      h('h3', sc.title), h('p', sc.stem), h('p.sc-question', sc.question),
+      h('div.sc-opts', opts),
+      h('p.small.sc-hint', 'Pick an answer: the workbench above loads that choice and plays it, so you can see what would happen.'),
+      verdictEl);
+    if ((getProgress(id).scenariosCorrect || []).includes(sc.id)) card.classList.add('done');
+    card._verdict = verdictEl; card._opts = opts;
+    return card;
+  });
+  function play(sc, si, oi) {
+    const o = sc.options[oi];
+    const card = scenarioCards[si];
+    card._opts.forEach((b, k) => b.classList.toggle('chosen', k === oi));
+    pendingScenario = { sc, si, oi };
+    scenarioBanner.hidden = false;
+    clear(scenarioBanner).append(
+      h('div.sb-main', h('strong', `🎓 Scenario ${si + 1}: ${sc.title}`), h('span', `Playing your choice ${letter(oi)}: “${o.label}”…`)),
+      h('button.btn.ghost.small', { type: 'button', onclick: () => card.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, '↩ Back to the scenario'));
+    lab.load(o.values || {});
+    document.getElementById('sec-workbench').scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => lab.run(), 450);
+  }
+  lab.onRun(() => {
+    if (!pendingScenario) return;
+    const { sc, si, oi } = pendingScenario;
+    pendingScenario = null;
+    const o = sc.options[oi], card = scenarioCards[si];
+    const correctIdx = sc.options.findIndex(x => x.correct);
+    const ok = !!o.correct;
+    const verdict = [
+      h('p', h('strong', ok ? '✓ Correct. ' : '✗ Not the best choice. '), o.why),
+      ok ? null : h('p.small', `The best answer is ${letter(correctIdx)}: ${sc.options[correctIdx].why}`),
+    ];
+    clear(card._verdict).append(h(`div.alert.tone-${ok ? 'ok' : 'error'}`, verdict));
+    card._opts.forEach((b, k) => { b.classList.toggle('right', k === correctIdx && ok); b.classList.toggle('wrong', k === oi && !ok); });
+    clear(scenarioBanner).append(
+      h(`div.sb-main.tone-${ok ? 'ok' : 'error'}`, h('strong', `${ok ? '✓ Correct' : '✗ Not the best choice'} · Scenario ${si + 1}, choice ${letter(oi)}`), h('span', o.why)),
+      h('div.sb-actions',
+        ok ? null : h('button.btn.small', { type: 'button', onclick: () => play(sc, si, correctIdx) }, `▶ Play the best answer (${letter(correctIdx)})`),
+        h('button.btn.ghost.small', { type: 'button', onclick: () => card.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, '↩ Back to the scenario')));
+    if (ok) {
+      card.classList.add('done');
+      const done = new Set(getProgress(id).scenariosCorrect || []); done.add(sc.id);
+      setProgress(id, { scenariosCorrect: [...done] });
+    }
+  });
+  const scenarios = mod.scenarios ? section('scenarios', 'Exam-style scenarios',
+    h('p.small', 'Short cases in the style of AI-103 questions, written for this site from the official objectives. They are not real exam questions. Each answer is wired to the workbench: choose one and watch what it does.'),
+    h('div.sc-list', scenarioCards)) : null;
 
   // ---- D. compare ----
   const histEl = h('div');
@@ -242,11 +303,11 @@ export async function renderTopic(root, id) {
       h('div', h('h3', 'Go further'), mod.next.length ? h('ul', mod.next.map(p => h('li', link(p)))) : h('p.small', '—'))),
     h('nav.pager', prev ? h('a.btn', { href: `#/s/${prev.id}` }, `‹ ${prev.short}`) : h('span'), next ? h('a.btn', { href: `#/s/${next.id}` }, `${next.short} ›`) : h('span')));
 
-  root.append(header, ...(explain ? [explain] : []), understand, workbench, compare, debug, assess, recap);
+  root.append(header, ...(explain ? [explain] : []), understand, workbench, ...(scenarios ? [scenarios] : []), compare, debug, assess, recap);
   return () => { window.removeEventListener('progress', refreshProgress); if (explainer) explainer.stop(); };
 }
 
-const BADGES = { explain: ['', '🎞️'], understand: ['A', '💡'], workbench: ['B', '🧪'], compare: ['D', '⚖️'], debug: ['E', '🐞'], assess: ['F', '🏆'] };
+const BADGES = { explain: ['', '🎞️'], understand: ['A', '💡'], workbench: ['B', '🧪'], scenarios: ['', '🎓'], compare: ['D', '⚖️'], debug: ['E', '🐞'], assess: ['F', '🏆'] };
 
 function section(anchor, title, ...kids) {
   const [letter, icon] = BADGES[anchor] || ['', ''];
