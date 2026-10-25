@@ -87,7 +87,7 @@ for (const id of ids) {
     const ok = await page.locator('#sec-assess .alert.tone-ok').count();
     if (!ok) failures.push(`${id}: solution settings did not pass the challenge in the UI`);
     const nq = await page.locator('.quiz-q').count();
-    for (let i = 0; i < nq; i++) await page.locator('.quiz-q').nth(i).locator('input').first().check();
+    for (let i = 0; i < nq; i++) await page.locator('.quiz-q').nth(i).locator('.quiz-opt').first().click();
     if (shots) await page.screenshot({ path: path.join(shots, `${id}.png`), fullPage: false });
   } catch (e) {
     failures.push(`${id}: ${e.message.split('\n')[0]}`);

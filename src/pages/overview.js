@@ -11,41 +11,44 @@ export function loadModule(id) {
   return modCache[id];
 }
 
-const ICONS = {
-  ingestion: '▤', fields: '⌗', classification: '⇶', multimodal: '◫',
-};
-
 export function renderHome(root) {
   const prog = allProgress();
   const done = AGENDA.filter(a => isComplete(prog[a.id] || {})).length;
   root.append(
-    h('header.page-head',
-      h('p.eyebrow', 'Azure AI-103 · information extraction and content understanding'),
-      h('h1', 'Document AI Concept Lab'),
-      h('p.lead', `Four hands-on workbenches for the agenda: watch documents being read, structured, extracted, classified and understood — then break things on purpose and fix them.`),
-      h('p', h('strong', `${done} of ${AGENDA.length}`), ' topics completed in this browser.')),
+    h('header.hero.home-hero',
+      h('div.hero-deco', { 'aria-hidden': 'true' }, AGENDA.map((a, i) => h(`span.float.f${i}`, a.emoji))),
+      h('p.hero-eyebrow', 'Azure AI-103 · Document AI, hands-on'),
+      h('h1', 'Watch AI read, sort and understand your documents'),
+      h('p.hero-lead', 'Four interactive workbenches. Run a pipeline, watch every stage happen on the page, break it on purpose, then fix it.'),
+      h('div.hero-cta',
+        h('a.btn.cta', { href: `#/s/${AGENDA[0].id}` }, '▶ Start with topic 1'),
+        h('span.hero-progress', h('strong', `${done}/${AGENDA.length}`), ' topics completed'))),
+    h('section.section.agenda-section',
+      h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '🗺️'), 'The agenda'),
+      h('div.agenda-grid', AGENDA.map((a, i) => h('a.agenda-card', { href: `#/s/${a.id}`, style: `--topic:${a.color};--topic-2:${a.color2}` },
+        h('div.agenda-top',
+          h('span.agenda-emoji', { 'aria-hidden': 'true' }, a.emoji),
+          h('span.agenda-num', `Topic ${i + 1}`),
+          isComplete(prog[a.id] || {}) ? h('span.agenda-done', '★ done') : null),
+        h('div.agenda-body',
+          h('h3', a.title),
+          h('p', a.summary),
+          h('div.stage-chips', a.stages.map(s => h('span.stage-chip', s))),
+          h('span.agenda-go', 'Open workbench →')))))),
     h('section.section',
-      h('h2', 'The agenda'),
-      h('div.agenda-grid', AGENDA.map((a, i) => h('a.card.agenda-card', { href: `#/s/${a.id}` },
-        h('span.agenda-icon', { 'aria-hidden': 'true' }, ICONS[a.id] || '•'),
-        h('span.eyebrow', `Topic ${i + 1}${isComplete(prog[a.id] || {}) ? ' · ★ complete' : ''}`),
-        h('h3', a.title),
-        h('p.small', a.summary),
-        h('ul.small.stage-list', a.stages.map(s => h('li', s))))))),
+      h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '🧭'), 'How each topic works'),
+      h('ol.howto.steps-visual',
+        h('li', h('span.step-ico', '💡'), h('strong', 'Understand'), h('span', 'Plain-language and technical explanation, key terms, a real use case.')),
+        h('li', h('span.step-ico', '🧪'), h('strong', 'Watch it work'), h('span', 'The workbench shows the actual document, image, audio or video as each stage runs. Click anything to inspect it.')),
+        h('li', h('span.step-ico', '⚖️'), h('strong', 'Compare'), h('span', 'Every run is recorded; diff two runs setting by setting.')),
+        h('li', h('span.step-ico', '🐞'), h('strong', 'Debug'), h('span', 'Load a broken setup, find the cause, fix it.')),
+        h('li', h('span.step-ico', '🏆'), h('strong', 'Challenge & quiz'), h('span', 'A checked challenge, a walkthrough after you try, and a scenario quiz.')))),
     h('section.section',
-      h('h2', 'How each topic works'),
-      h('ol.howto',
-        h('li', h('strong', 'Understand'), ' — plain-language and technical explanation, key terms, a real use case.'),
-        h('li', h('strong', 'Visualize & simulate'), ' — a workbench showing the actual document, image, audio or video as each stage runs. Run it all or step through; click anything to inspect it.'),
-        h('li', h('strong', 'Compare'), ' — every run is recorded; diff two runs setting by setting.'),
-        h('li', h('strong', 'Debug'), ' — load a broken configuration, find the cause, fix it.'),
-        h('li', h('strong', 'Apply & assess'), ' — a checked challenge, a solution walkthrough after you try, and a scenario quiz.'))),
-    h('section.section',
-      h('h2', 'Where results come from'),
+      h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '🔬'), 'Where results come from'),
       h('p', 'Nothing on this site calls Azure. Every run is labelled with where its results come from, and every number is tagged ', h('span.chip.tone-info', 'computed'), ' or ', h('span.chip.tone-warn', 'estimate'), '.'),
       h('div.card-grid', Object.values(MODES).filter(m => m !== MODES.live).map(m => h(`div.card.provenance.tone-${m.tone}`, h('strong', m.label), h('p.small', m.text))))),
     h('section.section',
-      h('h2', 'Progress'),
+      h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '📈'), 'Progress'),
       h('p.small', 'Progress is stored only in this browser. '),
       h('button.btn.ghost', { type: 'button', onclick: () => { if (confirm('Clear all progress stored in this browser?')) { resetAll(); location.reload(); } } }, 'Reset my progress')));
 }
@@ -75,7 +78,7 @@ export function renderNav(nav, currentHash) {
   clear(nav);
   const p = allProgress();
   nav.appendChild(h('a.nav-home', { href: '#/' }, 'Document AI Concept Lab'));
-  nav.appendChild(h('ol.nav-agenda', AGENDA.map(a => h('li', h('a', { href: `#/s/${a.id}`, class: currentHash === `#/s/${a.id}` ? 'current' : null },
-    h('span.nav-icon', { 'aria-hidden': 'true' }, ICONS[a.id]), ' ', a.title, isComplete(p[a.id] || {}) ? ' ★' : '')))));
+  nav.appendChild(h('ol.nav-agenda', AGENDA.map((a, i) => h('li', h('a', { href: `#/s/${a.id}`, class: currentHash === `#/s/${a.id}` ? 'current' : null, style: `--topic:${a.color};--topic-2:${a.color2}` },
+    h('span.nav-emoji', { 'aria-hidden': 'true' }, a.emoji), h('span.nav-text', h('small', `Topic ${i + 1}`), a.title), isComplete(p[a.id] || {}) ? ' ★' : '')))));
   nav.appendChild(h('a.nav-link', { href: '#/coverage' }, 'Agenda coverage'));
 }

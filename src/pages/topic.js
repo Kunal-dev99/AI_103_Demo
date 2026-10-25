@@ -7,8 +7,8 @@ import { AGENDA, findAgenda, objectiveText } from '../agenda.js';
 import { SOURCE } from '../syllabus.js';
 
 const SECTIONS = [
-  ['understand', 'A. Understand'], ['workbench', 'B–C. Visualize & simulate'],
-  ['compare', 'D. Experiment & compare'], ['debug', 'E. Debug'], ['assess', 'F. Apply & assess'],
+  ['understand', '💡 Understand'], ['workbench', '🧪 Workbench'],
+  ['compare', '⚖️ Compare'], ['debug', '🐞 Debug'], ['assess', '🏆 Challenge & quiz'],
 ];
 
 const link = id => {
@@ -51,11 +51,16 @@ export async function renderTopic(root, id) {
   window.addEventListener('progress', refreshProgress);
   refreshProgress();
 
-  const header = h('header.page-head',
+  root.style.setProperty('--topic', meta.color);
+  root.style.setProperty('--topic-2', meta.color2);
+  const header = h('header.hero.topic-hero',
     h('nav.crumbs', { 'aria-label': 'Breadcrumb' }, h('a', { href: '#/' }, 'Home'), ' › ', `Topic ${idx + 1} of ${AGENDA.length}`),
-    h('p.eyebrow', `Lab: ${mod.lab}`),
-    h('h1', meta.title),
-    h('p.lead', meta.summary),
+    h('div.hero-row',
+      h('span.hero-emoji', { 'aria-hidden': 'true' }, meta.emoji),
+      h('div',
+        h('p.hero-eyebrow', `Topic ${idx + 1} · ${mod.lab}`),
+        h('h1', meta.title),
+        h('p.hero-lead', meta.summary))),
     progressEl,
     h('nav.section-nav', { 'aria-label': 'Sections' }, SECTIONS.map(([a, l]) => h('a', { href: `#/s/${id}`, onclick: e => { e.preventDefault(); document.getElementById(`sec-${a}`).scrollIntoView({ behavior: 'smooth' }); } }, l))));
 
@@ -207,7 +212,7 @@ export async function renderTopic(root, id) {
     h('h3', 'Scenario-based knowledge check'), quizEl);
 
   const recap = h('section.section.recap',
-    h('h2', 'Recap'), h('p', mod.recap),
+    h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '🎯'), 'Recap'), h('p', mod.recap),
     h('div.two-col',
       h('div', h('h3', 'Build on'), mod.prereqs.length ? h('ul', mod.prereqs.map(p => h('li', link(p)))) : h('p.small', '—')),
       h('div', h('h3', 'Go further'), mod.next.length ? h('ul', mod.next.map(p => h('li', link(p)))) : h('p.small', '—'))),
@@ -217,8 +222,12 @@ export async function renderTopic(root, id) {
   return () => window.removeEventListener('progress', refreshProgress);
 }
 
+const BADGES = { understand: ['A', '💡'], workbench: ['B', '🧪'], compare: ['D', '⚖️'], debug: ['E', '🐞'], assess: ['F', '🏆'] };
+
 function section(anchor, title, ...kids) {
-  return h('section.section', { id: `sec-${anchor}`, 'aria-labelledby': `h-${anchor}` }, h('h2', { id: `h-${anchor}` }, title), kids);
+  const [letter, icon] = BADGES[anchor] || ['', ''];
+  return h(`section.section.sec-${anchor}`, { id: `sec-${anchor}`, 'aria-labelledby': `h-${anchor}` },
+    h('h2.sec-title', { id: `h-${anchor}` }, h('span.sec-badge', { 'aria-hidden': 'true' }, icon), title.replace(/^[A-F](–[A-F])?\. /, '')), kids);
 }
 
 function radio(group, n, current, on) {
