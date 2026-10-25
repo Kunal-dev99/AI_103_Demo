@@ -648,3 +648,8 @@ details.arch summary { color: var(--topic); }
 @media (prefers-reduced-motion: reduce) { .ex-in, .ex-pop, .ex-slide, .ex-draw, .ex-grow, .ex-scan { animation-duration: .01s !important; animation-delay: 0s !important; } }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ex-text.hand { fill: #9db7ff; } }
 .ex-leader { stroke: #8b5cf6; stroke-width: 1.5; stroke-dasharray: 3 3; }
+.exam-box { margin: 4px 0 14px; padding: 14px 18px; border-radius: 16px; background: linear-gradient(135deg, color-mix(in srgb, var(--topic) 10%, var(--surface)), color-mix(in srgb, var(--topic-2) 12%, var(--surface))); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--topic) 30%, transparent); }
+.exam-box h3 { margin-top: 0; color: var(--text) !important; }
+.exam-box ul { margin: 6px 0; padding-left: 20px; display: grid; gap: 6px; }
+.exam-box li::marker { color: var(--topic); }
+.exam-obj { display: inline-block; font-family: var(--mono); font-size: .74rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; color: #fff; background: linear-gradient(135deg, var(--topic), var(--topic-2)); cursor: help; white-space: nowrap; }

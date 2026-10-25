@@ -89,9 +89,12 @@ const DOCS = {
   },
 };
 
+// Content Understanding is the service the AI-103 objectives name; Document Intelligence models are the alternative.
+// Analyzer/model IDs are illustrative: check the docs for the API version you target.
 const MODELS = {
-  read: { label: 'prebuilt-read (OCR)', layout: false },
-  layout: { label: 'prebuilt-layout (OCR + structure)', layout: true },
+  cu: { label: 'Content Understanding · document analyzer (OCR + layout + markdown)', short: 'Content Understanding', layout: true, service: 'cu', modelId: 'prebuilt-document' },
+  layout: { label: 'Document Intelligence · prebuilt-layout (OCR + structure)', short: 'prebuilt-layout', layout: true, service: 'di', modelId: 'prebuilt-layout' },
+  read: { label: 'Document Intelligence · prebuilt-read (OCR only)', short: 'prebuilt-read', layout: false, service: 'di', modelId: 'prebuilt-read' },
 };
 
 const charW = size => size * 0.52;
@@ -143,7 +146,7 @@ function analyze(p) {
     steps.push(step('upload', 'Upload rejected (password-protected PDF)', 'The service cannot open encrypted PDFs. Remove the password before submitting.', { format: 'pdf', encrypted: true, error: { code: 'InvalidContent' } }, 'error'));
     return { steps, view, output: [{ type: 'alert', tone: 'error', text: 'Encrypted PDF: unlock it upstream (e.g. in the intake system) before analysis.' }], metrics: [], summary: 'Rejected at upload (encrypted PDF)' };
   }
-  steps.push(step('upload', 'Document accepted', `${doc.label} as ${p.format.toUpperCase()}. The analyze call is a long-running operation: POST, then poll the Operation-Location URL.`, { format: p.format, pages: 1, model: `prebuilt-${p.model}` }));
+  steps.push(step('upload', 'Document accepted', `${doc.label} as ${p.format.toUpperCase()}. The analyze call is a long-running operation: POST, then poll the Operation-Location URL.`, { format: p.format, pages: 1, [model.service === 'cu' ? 'analyzerId' : 'modelId']: model.modelId }));
 
   // 2. Pre-processing
   const rotated = doc.angle >= 45 && !p.deskew;
@@ -200,11 +203,8 @@ function analyze(p) {
   const orderErrors = view.order.reduce((a, id, i) => a + (truth[i] !== id ? 1 : 0), 0);
 
   // 5. Output
-  const byId = Object.fromEntries(view.lines.map(l => [l.id, l]));
-  if (p.output === 'markdown' && !model.layout) {
-    steps.push(step('output', 'Markdown output not available', 'outputContentFormat=markdown is produced by the layout model. With prebuilt-read you only get plain text content.', { outputContentFormat: 'markdown', model: 'prebuilt-read' }, 'error'));
-    view.output = { format: 'error', text: '' };
-  } else if (p.output === 'markdown') {
+  // Markdown rendering of the layout result (used for markdown output and inside the Content Understanding JSON).
+  const toMarkdown = () => {
     const md = [];
     const doneTables = new Set();
     for (const id of view.order) {
@@ -222,15 +222,27 @@ function analyze(p) {
       else md.push(l.text);
     }
     for (const m of view.marks) md.push(`${m.state === 'selected' ? '☒' : '☐'} ${m.label}`);
-    view.output = { format: 'markdown', text: md.join('\n') };
+    return md.join('\n');
+  };
+  const byId = Object.fromEntries(view.lines.map(l => [l.id, l]));
+  if (p.output === 'markdown' && !model.layout) {
+    steps.push(step('output', 'Markdown output not available', 'Markdown comes from layout analysis: Content Understanding returns it by default and Document Intelligence prebuilt-layout returns it with outputContentFormat=markdown. prebuilt-read only gives plain text.', { outputContentFormat: 'markdown', model: 'prebuilt-read' }, 'error'));
+    view.output = { format: 'error', text: '' };
+  } else if (p.output === 'markdown') {
+    const mdText = toMarkdown();
+    view.output = { format: 'markdown', text: mdText };
     steps.push(step('output', 'Markdown produced', 'Headings, tables and selection marks are preserved as markdown, ready for chunking in a RAG pipeline or for an agent to read.', { contentFormat: 'markdown', length: view.output.text.length }, orderErrors ? 'warn' : 'ok'));
   } else {
-    const json = { status: 'succeeded', analyzeResult: { modelId: `prebuilt-${p.model}`, content: view.order.map(id => byId[id].text).join('\n').slice(0, 160) + '…',
-      pages: [{ pageNumber: 1, angle: rotated ? doc.angle : 0, width: 8.27, height: 11.69, unit: 'inch', lines: view.lines.length, words: view.words.length, selectionMarks: view.marks.length || undefined }],
-      tables: view.tables.map(t => ({ rowCount: t.rows, columnCount: t.cols, cells: t.cells.length })),
-      paragraphs: model.layout ? view.lines.filter(l => !l.table).slice(0, 4).map(l => ({ role: l.role === 'text' ? undefined : l.role, content: l.text })) : undefined } };
+    const content = view.order.map(id => byId[id].text).join('\n').slice(0, 160) + '…';
+    const pages = [{ pageNumber: 1, angle: rotated ? doc.angle : 0, width: 8.27, height: 11.69, unit: 'inch', lines: view.lines.length, words: view.words.length, selectionMarks: view.marks.length || undefined }];
+    const tables = view.tables.map(t => ({ rowCount: t.rows, columnCount: t.cols, cells: t.cells.length }));
+    const json = model.service === 'cu'
+      // Content Understanding result shape (abridged, illustrative): contents[] with markdown plus pages/tables.
+      ? { status: 'Succeeded', result: { analyzerId: model.modelId, contents: [{ kind: 'document', markdown: toMarkdown().slice(0, 200) + '…', pages, tables }] } }
+      : { status: 'succeeded', analyzeResult: { modelId: model.modelId, content, pages, tables,
+        paragraphs: model.layout ? view.lines.filter(l => !l.table).slice(0, 4).map(l => ({ role: l.role === 'text' ? undefined : l.role, content: l.text })) : undefined } };
     view.output = { format: 'json', text: JSON.stringify(json, null, 2) };
-    steps.push(step('output', 'JSON result returned', 'AnalyzeResult with pages → lines → words (each with polygon and confidence), plus tables, paragraphs and selection marks when layout ran.', { contentFormat: 'text' }, orderErrors && model.layout ? 'warn' : 'ok'));
+    steps.push(step('output', 'JSON result returned', model.service === 'cu' ? 'Content Understanding returns contents[] with the document as markdown plus pages, words with polygons and confidence, and tables.' : 'AnalyzeResult with pages → lines → words (each with polygon and confidence), plus tables, paragraphs and selection marks when layout ran.', { contentFormat: 'text' }, orderErrors && model.layout ? 'warn' : 'ok'));
   }
 
   const meanConf = view.words.reduce((a, w) => a + w.conf, 0) / view.words.length;
@@ -240,7 +252,7 @@ function analyze(p) {
       { type: 'table', title: 'Recognised lines in output order', columns: ['#', 'Text', 'Role', 'Confidence', 'Correct position?'],
         rows: view.order.map((id, i) => [String(i + 1), byId[id].text, byId[id].role || '—', byId[id].conf.toFixed(2), truth[i] === id ? 'yes' : `no (should be #${truth.indexOf(id) + 1})`]),
         tones: view.order.map((id, i) => (byId[id].text !== byId[id].truth ? 'error' : byId[id].conf < p.threshold ? 'warn' : truth[i] !== id ? 'warn' : 'ok')) },
-      view.output.format === 'error' ? { type: 'alert', tone: 'error', text: 'Switch the model to prebuilt-layout, or ask for plain text output.' } : { type: 'code', title: view.output.format === 'markdown' ? 'Markdown output' : 'AnalyzeResult (abridged, simulated)', lang: view.output.format, text: view.output.text },
+      view.output.format === 'error' ? { type: 'alert', tone: 'error', text: 'Use a layout-capable analyzer (Content Understanding or prebuilt-layout), or ask for plain text output.' } : { type: 'code', title: view.output.format === 'markdown' ? 'Markdown output' : model.service === 'cu' ? 'Analyzer result (abridged, simulated shape)' : 'AnalyzeResult (abridged, simulated)', lang: view.output.format, text: view.output.text },
     ],
     metrics: [
       metric('Mean word confidence', meanConf.toFixed(2), 'computed', 'Average of simulated word confidences.'),
@@ -259,16 +271,16 @@ export default {
   lab: 'Document ingestion workbench',
   workbench: 'ingestion',
   services: [
-    { name: 'Document Intelligence: Read model', url: 'https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/read' },
-    { name: 'Document Intelligence: Layout model', url: 'https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/layout' },
     { name: 'Azure Content Understanding in Foundry Tools', url: 'https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/' },
+    { name: 'Document Intelligence: Layout model (alternative)', url: 'https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/layout' },
+    { name: 'Document Intelligence: Read model (alternative)', url: 'https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/read' },
   ],
   prereqs: [],
   next: ['fields', 'classification'],
 
   concept: {
     plain: 'A scanned or photographed document is only an image. Ingestion turns it into something software can use: first make sure the file is acceptable and the page is upright and readable, then read every character (OCR), then work out the structure a person sees at a glance — which text is the title, where the table is, which column to read first.',
-    technical: 'Document Intelligence exposes OCR as prebuilt-read (pages, lines, words, each with a polygon and confidence) and structure as prebuilt-layout, which adds tables with cell coordinates, selection marks, paragraph roles (title, sectionHeading, pageHeader, pageFooter) and column-aware reading order, and can return content as markdown (outputContentFormat=markdown). Analysis is a long-running operation: you POST the document and poll the Operation-Location URL until it succeeds. Content Understanding analyzers build on the same OCR and layout foundation.',
+    technical: 'In AI-103 terms this is Azure Content Understanding in Foundry Tools: a document analyzer runs OCR (words and lines, each with a polygon and confidence) and layout analysis (tables with cells, selection marks, paragraph roles such as title and sectionHeading, column-aware reading order) and returns the document as markdown plus structured content, ready for field extraction or RAG. Document Intelligence offers the same foundation as separate models: prebuilt-read for OCR only and prebuilt-layout for structure (markdown via outputContentFormat=markdown). Analysis is asynchronous: submit the file, then poll the operation until it succeeds.',
     useCase: 'An operations team ingests supplier invoices, scanned faxes, phone photos of receipts and multi-column reports into a search index. Clean PDFs go straight through; rotated photos and noisy faxes are caught by confidence checks before their text pollutes the index, and layout output keeps tables intact so totals stay next to their labels.',
     terms: [
       ['OCR', 'Converting pixels to characters. Every word and line gets a confidence score (0–1) and a polygon locating it on the page.'],
@@ -295,19 +307,27 @@ export default {
         nodes: [
           { id: 'upload', label: 'Blob Storage (inbox)', col: 0, row: 1, kind: 'store', detail: 'Documents land in a container; Event Grid raises BlobCreated.' },
           { id: 'pre', label: 'Azure Function', col: 1, row: 1, kind: 'compute', detail: 'Validates the file and calls the analyze API using its managed identity (role: Cognitive Services User).' },
-          { id: 'ocr', label: `Document Intelligence · ${p ? MODELS[p.model].label : 'model'}`, col: 2, row: 1, kind: 'ai', detail: 'One analyze call performs OCR, plus layout when the layout model is used.' },
-          { id: 'layout', label: 'Layout result', col: 3, row: 0.4, kind: 'data', disabled: !!(p && !MODELS[p.model].layout), detail: 'Tables, marks, roles. Only present with prebuilt-layout.' },
+          { id: 'ocr', label: p ? MODELS[p.model].label : 'Content Understanding analyzer', col: 2, row: 1, kind: 'ai', detail: 'One analyze call performs OCR, plus layout when the analyzer or model supports it. Content Understanding lives in a Microsoft Foundry resource (Foundry Tools).' },
+          { id: 'layout', label: 'Layout result', col: 3, row: 0.4, kind: 'data', disabled: !!(p && !MODELS[p.model].layout), detail: 'Tables, marks, roles and markdown. Present with Content Understanding or prebuilt-layout, not prebuilt-read.' },
           { id: 'output', label: p && p.output === 'markdown' ? 'Markdown → chunker → AI Search' : 'JSON → database', col: 4, row: 1, kind: 'store', detail: 'Results are stored for search, extraction or review.' },
         ],
         edges: [['upload', 'pre', 'event'], ['pre', 'ocr', 'analyze'], ['ocr', 'layout'], ['layout', 'output'], ['ocr', 'output']],
       }),
       implementation: p => ({
         nodes: [
-          { id: 'upload', label: 'client = DocumentIntelligenceClient(endpoint, DefaultAzureCredential())', col: 0, row: 0, kind: 'code', detail: 'azure-ai-documentintelligence, keyless auth with Microsoft Entra ID.' },
-          { id: 'pre', label: 'body = AnalyzeDocumentRequest(bytes_source=data)', col: 0, row: 1, kind: 'code', detail: 'Or url_source for a blob URL the service can reach. (Illustrative; check SDK docs for your version.)' },
-          { id: 'ocr', label: `poller = client.begin_analyze_document("prebuilt-${p ? p.model : 'layout'}", body${p && p.output === 'markdown' ? ', output_content_format="markdown"' : ''})`, col: 0, row: 2, kind: 'code', detail: 'Long-running operation.' },
-          { id: 'layout', label: 'result = poller.result()  # pages, tables, paragraphs', col: 0, row: 3, kind: 'code', detail: 'AnalyzeResult.' },
-          { id: 'output', label: 'for w in result.pages[0].words: w.content, w.confidence, w.polygon', col: 0, row: 4, kind: 'code', detail: 'Iterate words / lines / tables.' },
+          ...(p && MODELS[p.model].service === 'di' ? [
+            { id: 'upload', label: 'client = DocumentIntelligenceClient(endpoint, DefaultAzureCredential())', col: 0, row: 0, kind: 'code', detail: 'azure-ai-documentintelligence, keyless auth with Microsoft Entra ID.' },
+            { id: 'pre', label: 'body = AnalyzeDocumentRequest(bytes_source=data)', col: 0, row: 1, kind: 'code', detail: 'Or url_source for a blob URL the service can reach. (Illustrative; check SDK docs for your version.)' },
+            { id: 'ocr', label: `poller = client.begin_analyze_document("${MODELS[p.model].modelId}", body${p.output === 'markdown' ? ', output_content_format="markdown"' : ''})`, col: 0, row: 2, kind: 'code', detail: 'Long-running operation.' },
+            { id: 'layout', label: 'result = poller.result()  # pages, tables, paragraphs', col: 0, row: 3, kind: 'code', detail: 'AnalyzeResult.' },
+            { id: 'output', label: 'for w in result.pages[0].words: w.content, w.confidence, w.polygon', col: 0, row: 4, kind: 'code', detail: 'Iterate words / lines / tables.' },
+          ] : [
+            { id: 'upload', label: 'token = DefaultAzureCredential().get_token("https://cognitiveservices.azure.com/.default")', col: 0, row: 0, kind: 'code', detail: 'Keyless auth with Microsoft Entra ID against the Foundry resource. Illustrative: use the SDK or REST shape for your API version.' },
+            { id: 'pre', label: 'POST {endpoint}/contentunderstanding/analyzers/prebuilt-document:analyze', col: 0, row: 1, kind: 'code', detail: 'Body: the file URL or bytes. Analyzer ID and api-version are illustrative; check the Content Understanding docs.' },
+            { id: 'ocr', label: 'GET Operation-Location  →  poll until status == "Succeeded"', col: 0, row: 2, kind: 'code', detail: 'Analysis is asynchronous.' },
+            { id: 'layout', label: 'doc = result["contents"][0]  # markdown, pages, tables', col: 0, row: 3, kind: 'code', detail: 'The analyzer returns markdown plus structured content.' },
+            { id: 'output', label: 'chunks = split_markdown(doc["markdown"])  # → index / fields / agent', col: 0, row: 4, kind: 'code', detail: 'Downstream use: RAG ingestion, field extraction, agents.' },
+          ]),
         ],
         edges: [['upload', 'pre'], ['pre', 'ocr'], ['ocr', 'layout'], ['layout', 'output']],
       }),
@@ -319,7 +339,7 @@ export default {
     controls: [
       { id: 'document', label: 'Sample document', type: 'select', options: Object.entries(DOCS).map(([v, d]) => [v, d.label]), default: 'invoice' },
       { id: 'format', label: 'File format', type: 'select', options: [['pdf', 'PDF'], ['jpeg', 'JPEG photo'], ['png', 'PNG'], ['tiff', 'TIFF scan'], ['heic', 'HEIC (iPhone)'], ['pdf-locked', 'Password-protected PDF']], default: 'pdf' },
-      { id: 'model', label: 'Model', type: 'select', options: Object.entries(MODELS).map(([v, m]) => [v, m.label]), default: 'layout' },
+      { id: 'model', label: 'Analyzer / model', type: 'select', options: Object.entries(MODELS).map(([v, m]) => [v, m.label]), default: 'cu', help: 'Content Understanding is the service named in the AI-103 objectives; the Document Intelligence models are shown for comparison.' },
       { id: 'deskew', label: 'Orientation correction', type: 'toggle', default: true },
       { id: 'enhance', label: 'Denoise / enhance before upload', type: 'toggle', default: false },
       { id: 'threshold', label: 'Confidence threshold', type: 'range', min: 0.5, max: 0.95, step: 0.05, default: 0.8 },
@@ -337,7 +357,7 @@ export default {
 
   compare: {
     suggestions: [
-      'Run the two-column report with prebuilt-read, then prebuilt-layout. Compare reading-order errors and tables recovered.',
+      'Run the two-column report with prebuilt-read, then with Content Understanding. Compare reading-order errors and tables recovered.',
       'Run the noisy fax with enhancement off, then on. Watch the misread lines (O for 0) disappear and confidence rise.',
       'Run the receipt with orientation correction off, then on, and compare mean confidence.',
       'Run the form with Read, then Layout, and look at what happens to the checkboxes.',
@@ -354,9 +374,9 @@ export default {
     { id: 'fax', title: 'Fax total reads "1,24O.5O"', values: { document: 'fax', format: 'tiff', enhance: false }, node: 'ocr',
       symptom: 'Numbers contain the letter O; dates do too.', cause: 'A noisy 200 dpi fax makes O/0 and l/1 ambiguous.', fix: 'Enable denoise / enhancement (better: rescan at 300 dpi).' },
     { id: 'columns', title: 'Report paragraphs are interleaved', values: { document: 'report', model: 'read' }, node: 'layout',
-      symptom: 'Sentences from column 1 and column 2 alternate; the table is flattened into loose lines.', cause: 'No layout analysis, so no column detection or tables.', fix: 'Use prebuilt-layout.' },
+      symptom: 'Sentences from column 1 and column 2 alternate; the table is flattened into loose lines.', cause: 'No layout analysis, so no column detection or tables.', fix: 'Use the Content Understanding analyzer (or Document Intelligence prebuilt-layout).' },
     { id: 'markdown', title: 'Markdown requested but the call fails', values: { model: 'read', output: 'markdown' }, node: 'output',
-      symptom: 'Output step errors: markdown not available.', cause: 'Markdown output is a layout feature.', fix: 'Use prebuilt-layout (or request plain text).' },
+      symptom: 'Output step errors: markdown not available.', cause: 'Markdown output is a layout feature.', fix: 'Use the Content Understanding analyzer or prebuilt-layout (or request plain text).' },
   ],
 
   challenge: {
@@ -364,15 +384,15 @@ export default {
     condition: 'Document = two-column report, output = markdown, 0 reading-order errors, 1/1 tables recovered, no error steps.',
     hint: 'Which model understands columns and tables, and which one can emit markdown?',
     check: (p, res) => p.document === 'report' && p.output === 'markdown' && !res.steps.some(s => s.status === 'error') && res.metrics.find(m => m.label === 'Reading-order errors').value === '0' && res.metrics.find(m => m.label === 'Tables recovered').value === '1/1',
-    solution: ['Choose the two-column report.', 'Choose prebuilt-layout: it detects columns, tables and roles.', 'Set output format to Markdown.', 'Run. Headings become #/##, the table becomes a pipe table, and the order list shows "yes" on every row.'],
-    solutionValues: { document: 'report', model: 'layout', output: 'markdown', format: 'pdf', deskew: true },
+    solution: ['Choose the two-column report.', 'Choose the Content Understanding analyzer (prebuilt-layout also works): it detects columns, tables and roles.', 'Set output format to Markdown.', 'Run. Headings become #/##, the table becomes a pipe table, and the order list shows "yes" on every row.'],
+    solutionValues: { document: 'report', model: 'cu', output: 'markdown', format: 'pdf', deskew: true },
   },
 
   quiz: [
-    { q: 'You index scanned two-column research reports for RAG. Retrieved chunks mix sentences from both columns. What should you change first?', options: ['Lower the confidence threshold', 'Use the layout model so reading order follows columns', 'Increase chunk overlap', 'Use a larger embedding model'], answer: 1, why: 'The text is already wrong before chunking: without layout, lines are not ordered by column.' },
-    { q: 'A form has tick boxes for "New" and "Existing" customer. Which output tells you which one is ticked?', options: ['Word confidence', 'Selection marks from the layout model', 'The page angle', 'The markdown heading level'], answer: 1, why: 'Layout returns selection marks with state selected / unselected.' },
+    { q: 'You index scanned two-column research reports for RAG. Retrieved chunks mix sentences from both columns. What should you change first?', options: ['Lower the confidence threshold', 'Use layout analysis (Content Understanding or prebuilt-layout) so reading order follows columns', 'Increase chunk overlap', 'Use a larger embedding model'], answer: 1, why: 'The text is already wrong before chunking: without layout, lines are not ordered by column.' },
+    { q: 'A form has tick boxes for "New" and "Existing" customer. Which output tells you which one is ticked?', options: ['Word confidence', 'Selection marks from layout analysis', 'The page angle', 'The markdown heading level'], answer: 1, why: 'Layout returns selection marks with state selected / unselected.' },
     { q: 'Faxed invoices produce totals like "1,24O.5O". What is the most robust fix?', options: ['Post the value anyway', 'Improve capture (300 dpi, denoise) and validate numeric fields, sending failures to review', 'Switch to prebuilt-read', 'Disable orientation correction'], answer: 1, why: 'Fix the input where you can, and never trust a malformed number: validate and route to review.' },
-    { q: 'Your pipeline needs headings and tables preserved as text for an LLM. Which request does that?', options: ['prebuilt-read with default output', 'prebuilt-layout with markdown output', 'prebuilt-read with markdown output', 'Any model; markdown is always returned'], answer: 1, why: 'Markdown content output comes from the layout model.' },
+    { q: 'Your pipeline needs headings and tables preserved as text for an LLM. Which request does that?', options: ['Document Intelligence prebuilt-read with default output', 'A Content Understanding document analyzer, using its markdown output', 'An embedding model on the raw PDF bytes', 'Any OCR call; markdown is always returned'], answer: 1, why: 'Content Understanding returns the document as markdown with headings and tables kept. (Document Intelligence prebuilt-layout can also do this with outputContentFormat=markdown; prebuilt-read cannot.)' },
   ],
 
   recap: 'Validate the file, fix orientation and noise early, use Read when you only need text and Layout when structure matters (tables, checkboxes, columns, markdown). Measure confidence and reading order before the text flows into extraction or search.',

@@ -237,8 +237,8 @@ const PREBUILT = { VendorName: 'vendor', CustomerName: 'customer', InvoiceId: 'd
 const PREBUILT_BY_CONCEPT = Object.fromEntries(Object.entries(PREBUILT).map(([k, v]) => [v, k]));
 
 const APPROACHES = {
-  prebuilt: { label: 'Document Intelligence prebuilt-invoice (fixed schema)', short: 'prebuilt-invoice' },
   cu: { label: 'Content Understanding custom analyzer (your schema)', short: 'CU analyzer' },
+  prebuilt: { label: 'Document Intelligence prebuilt-invoice (fixed schema)', short: 'prebuilt-invoice' },
   llm: { label: 'LLM prompt + JSON schema (structured outputs)', short: 'LLM + json_schema' },
 };
 const KIND_PENALTY = { invoice: 0, receipt: 0.14, 'purchase order': 0.08 }; // prebuilt-invoice on a non-invoice
@@ -723,7 +723,7 @@ export default {
     mode: 'local',
     controls: [
       { id: 'document', label: 'Sample document', type: 'select', options: Object.entries(DOCS).map(([v, d]) => [v, d.label]), default: 'invoice' },
-      { id: 'approach', label: 'Extraction approach', type: 'select', options: Object.entries(APPROACHES).map(([v, a]) => [v, a.label]), default: 'prebuilt', help: 'All three are simulated locally.' },
+      { id: 'approach', label: 'Extraction approach', type: 'select', options: Object.entries(APPROACHES).map(([v, a]) => [v, a.label]), default: 'cu', help: 'All three are simulated locally. Content Understanding is the service the AI-103 objectives name for analyzers.' },
       { id: 'schema', label: 'Field schema (one per line: Name: type [required] [extract|generate|classify] [# description])', type: 'textarea', default: DEFAULT_SCHEMA },
       { id: 'threshold', label: 'Confidence threshold', type: 'range', min: 0.5, max: 0.95, step: 0.05, default: 0.8 },
       { id: 'normalize', label: 'Fix lookalike characters in numbers (O→0, l→1)', type: 'toggle', default: false },
@@ -769,7 +769,7 @@ export default {
       symptom: 'The route stage errors: a due date of "TBC" and a low-confidence handwritten total were posted.', cause: 'The review policy auto-approves everything, so flags are ignored.', fix: 'Use "Review only flagged fields" (or whole-document review).' },
     { id: 'fabricated', title: 'Every receipt gets invoice number RCPT-0001', values: { document: 'receipt', approach: 'llm', schema: fieldsSchema(['MerchantName: string required', 'TransactionDate: date required', 'InvoiceId: string required', 'Total: number required']) }, node: 'extract',
       symptom: 'InvoiceId always has a value, but nothing on the receipt supports it. The required rule passes.', cause: 'A required (non-nullable) property in a strict JSON schema forces the model to output something even when the document has no such value.', fix: 'Remove "required" from InvoiceId so it is nullable; the model can then return null.' },
-    { id: 'wrong-model', title: 'Cost centre never comes back', values: { document: 'po', schema: fieldsSchema(['VendorName: string required', 'PurchaseOrder: string required', 'CostCentre: string required', 'InvoiceTotal: number required']) }, node: 'locate',
+    { id: 'wrong-model', title: 'Cost centre never comes back', values: { document: 'po', approach: 'prebuilt', schema: fieldsSchema(['VendorName: string required', 'PurchaseOrder: string required', 'CostCentre: string required', 'InvoiceTotal: number required']) }, node: 'locate',
       symptom: 'CostCentre is missing although it is printed on the order.', cause: 'prebuilt-invoice has a fixed schema with no cost-centre field. Adding a name to your schema does not teach it a new field.', fix: 'Switch to a Content Understanding custom analyzer (or a custom extraction model) that defines CostCentre.' },
   ],
 

@@ -75,6 +75,10 @@ export async function renderTopic(root, id) {
 
   const c = mod.concept;
   const understand = section('understand', 'A. Understand the concept',
+    meta.exam ? h('div.exam-box',
+      h('h3', '🎯 What the AI-103 exam expects'),
+      h('ul', meta.exam.map(([point, obj]) => h('li', h('span', point), ' ', h('span.exam-obj', { title: objectiveText(obj) }, obj)))),
+      h('p.small', 'Summarised from the official objective wording (hover a number to read it). These are study pointers, not actual exam questions.')) : null,
     h('div.two-col',
       h('div', h('h3', 'In plain language'), h('p', c.plain), h('h3', 'Technical explanation'), h('p', c.technical)),
       h('div', h('h3', 'Real-world use case'), h('p', c.useCase),
