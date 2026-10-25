@@ -142,8 +142,8 @@ const FILES = [
 
 const APPROACHES = {
   keywords: { label: 'Keyword rules (hand-written demo)', short: 'keyword rules' },
-  trained: { label: 'Custom classifier trained on labelled samples (simulated)', short: 'trained classifier' },
-  zeroshot: { label: 'Zero-shot categories with descriptions (simulated)', short: 'zero-shot categories' },
+  trained: { label: 'Document Intelligence custom classifier, trained on labelled samples (simulated)', short: 'trained classifier' },
+  zeroshot: { label: 'Content Understanding classify with category descriptions (simulated)', short: 'zero-shot categories' },
 };
 
 const OUTAGES = {

@@ -58,7 +58,7 @@ export default [
   {
     title: 'Layout: the structure a person sees at a glance',
     caption: 'Layout analysis groups text into structure: title, headings, paragraphs, page header and footer, tables with rows and cells, and checkboxes with their state.',
-    notes: ['In Document Intelligence this is the prebuilt-layout model. prebuilt-read gives you text only — no tables, roles or selection marks.', 'Structure is what keeps a total next to its label and a table row together.'],
+    notes: ['In Azure Content Understanding (Foundry Tools) a document analyzer does OCR and layout together and returns markdown plus structure. Document Intelligence offers the same as prebuilt-layout; its prebuilt-read model gives text only, with no tables, roles or selection marks.', 'Structure is what keeps a total next to its label and a table row together.'],
     draw(g, k) {
       g.appendChild(k.page(260, 40, 360, 440, { table: true, lines: 8 }));
       // page footer text + a checkbox with its label
@@ -105,8 +105,8 @@ export default [
   },
   {
     title: 'The result: structured output, ready to use',
-    caption: 'The service returns JSON (pages → lines → words with polygons and confidence, plus tables and roles) or markdown that keeps headings and tables. That feeds extraction, search indexes and agents.',
-    notes: ['Analysis is a long-running operation: you submit the document, then poll for the result.', 'Markdown output is handy for chunking in RAG pipelines because headings and tables survive.'],
+    caption: 'Content Understanding returns the document as markdown (headings and tables kept) plus JSON detail: words with positions and confidence, tables and roles. That feeds extraction, search indexes and agents.',
+    notes: ['Content Understanding returns the document as markdown plus structured content; Document Intelligence returns an AnalyzeResult (and markdown with outputContentFormat=markdown). Either way analysis is asynchronous: submit the file, then poll for the result.', 'Markdown is handy for chunking in RAG pipelines because headings and tables survive.'],
     draw(g, k) {
       g.appendChild(k.a(k.page(60, 120, 180, 240, { table: true, lines: 6 }), 0, 'pop'));
       g.appendChild(k.a(k.arrow(255, 240, 330, 170, { curve: 10 }), 0.4, 'draw'));
