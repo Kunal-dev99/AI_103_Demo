@@ -141,6 +141,24 @@ for (const id of targets) {
     if (!q.q || !Array.isArray(q.options) || q.options.length < 3 || typeof q.answer !== 'number' || !q.options[q.answer] || !q.why) fail(id, `quiz[${i}] malformed`);
   }
   if (!m.recap || m.recap.length < 60) fail(id, 'recap missing or too short');
+
+  // Exam-style scenarios: each option runs in the lab; exactly one is correct and runs without errors;
+  // wrong options must show a visible problem (warn/error) unless they explain why with cleanButWrong.
+  if (!Array.isArray(m.scenarios) || m.scenarios.length < 4) fail(id, 'scenarios needs at least 4 exam-style scenarios');
+  for (const sc of m.scenarios || []) {
+    for (const k of ['id', 'title', 'stem', 'question', 'objective']) if (!sc[k]) fail(id, `scenario ${sc.id || '?'} missing ${k}`);
+    if (sc.objective && !findSubtopic(sc.objective)) fail(id, `scenario ${sc.id} objective ${sc.objective} not in syllabus`);
+    if (!Array.isArray(sc.options) || sc.options.length < 3) { fail(id, `scenario ${sc.id} needs at least 3 options`); continue; }
+    if (sc.options.filter(o => o.correct).length !== 1) fail(id, `scenario ${sc.id} needs exactly one correct option`);
+    for (const [oi, o] of sc.options.entries()) {
+      if (!o.label || !o.why || !o.values) fail(id, `scenario ${sc.id} option ${oi} needs label, why, values`);
+      const r = run(o.values || {}, `scenario ${sc.id} option ${oi}`);
+      if (!r) continue;
+      const bad = r.steps.some(st => st.status === 'error' || st.status === 'warn');
+      if (o.correct && r.steps.some(st => st.status === 'error')) fail(id, `scenario ${sc.id}: correct option produces an error step`);
+      if (!o.correct && !bad && !o.cleanButWrong) fail(id, `scenario ${sc.id} option ${oi}: wrong option runs clean; make the failure visible or set cleanButWrong`);
+    }
+  }
 }
 
 if (warn.length) console.log(warn.join('\n'));
