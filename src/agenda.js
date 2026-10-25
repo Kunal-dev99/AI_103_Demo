@@ -1,11 +1,13 @@
 // The learning agenda this site covers. Each agenda topic has one in-depth lab.
 // `objectives` traces the topic back to the official AI-103 outline (src/syllabus.js).
 // `stages` are the subtopics the lab's workbench lets learners explore one by one.
+// `color`/`color2`/`emoji` give each topic its own visual identity across the site.
 import { findSubtopic } from './syllabus.js';
 
 export const AGENDA = [
   {
     id: 'ingestion',
+    color: '#4f46e5', color2: '#06b6d4', emoji: '📄',
     title: 'Document ingestion, OCR and layout analysis',
     short: 'Ingestion, OCR & layout',
     summary: 'Upload a document, clean it up, read its text with OCR and recover its structure: tables, headings, reading order.',
@@ -14,6 +16,7 @@ export const AGENDA = [
   },
   {
     id: 'fields',
+    color: '#db2777', color2: '#8b5cf6', emoji: '🔎',
     title: 'Structured field extraction',
     short: 'Field extraction',
     summary: 'Define a schema, map every field to its evidence on the page, validate it, and send uncertain values to human review.',
@@ -22,6 +25,7 @@ export const AGENDA = [
   },
   {
     id: 'classification',
+    color: '#f97316', color2: '#eab308', emoji: '🗂️',
     title: 'Document classification and routing',
     short: 'Classification & routing',
     summary: 'Classify a mixed inbox of documents, apply thresholds, route each one to the right system and handle ambiguous or failed cases.',
@@ -30,6 +34,7 @@ export const AGENDA = [
   },
   {
     id: 'multimodal',
+    color: '#059669', color2: '#3b82f6', emoji: '🎬',
     title: 'Multimodal content understanding',
     short: 'Multimodal understanding',
     summary: 'See how documents, images, audio and video are represented, which stages process each one, and how grounded fields come out.',

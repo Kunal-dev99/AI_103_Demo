@@ -54,8 +54,16 @@ for (const id of ids) {
   const before = errors.length;
   try {
     await page.goto(`${base}#/s/${id}`);
-    await page.waitForSelector('.lab .controls', { timeout: 10000 });
+    await page.waitForSelector('.lab .controls', { state: 'attached', timeout: 10000 });
     await page.waitForSelector('.workbench', { timeout: 10000 });
+    // concept explainer: every scene, notes toggle, back
+    if (await page.locator('.explainer').count()) {
+      const scenes = await page.locator('.ex-seg').count();
+      if (scenes < 4) failures.push(`${id}: explainer has only ${scenes} scenes`);
+      await page.click('.ex-notes-btn');
+      for (let i = 1; i < scenes; i++) await page.click('.ex-next');
+      await page.click('.ex-back');
+    } else failures.push(`${id}: no concept explainer`);
     // architecture / code views
     await page.click('details.arch summary');
     for (const v of ['architectural', 'implementation', 'conceptual']) await page.click(`.tab[data-view="${v}"]`);
@@ -64,7 +72,7 @@ for (const id of ids) {
     // run instantly
     await page.selectOption('.lab select[aria-label="Animation speed"]', '0');
     await page.click('.lab .btn.primary');
-    await page.waitForSelector('.sim-output .output');
+    await page.waitForSelector('.sim-output .output', { state: 'attached' });
     // step mode
     await page.click('.lab .btn-row .btn:nth-child(2)');
     // samples
@@ -87,7 +95,7 @@ for (const id of ids) {
     const ok = await page.locator('#sec-assess .alert.tone-ok').count();
     if (!ok) failures.push(`${id}: solution settings did not pass the challenge in the UI`);
     const nq = await page.locator('.quiz-q').count();
-    for (let i = 0; i < nq; i++) await page.locator('.quiz-q').nth(i).locator('input').first().check();
+    for (let i = 0; i < nq; i++) await page.locator('.quiz-q').nth(i).locator('.quiz-opt').first().click();
     if (shots) await page.screenshot({ path: path.join(shots, `${id}.png`), fullPage: false });
   } catch (e) {
     failures.push(`${id}: ${e.message.split('\n')[0]}`);
