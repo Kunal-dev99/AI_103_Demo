@@ -1,13 +1,14 @@
 // Agenda topic page: Understand → Workbench (visualize + simulate) → Compare → Debug → Apply & assess → Recap.
-import { h, clear, append, fmtValue } from '../engine/dom.js';
+import { h, clear, append, fmtValue, animationsSettled } from '../engine/dom.js';
 import { createVisualizer } from '../engine/visualizer.js';
 import { createLab } from '../engine/lab.js';
+import { createExplainer } from '../explainer/engine.js';
 import { getProgress, setProgress, isComplete } from '../engine/store.js';
 import { AGENDA, findAgenda, objectiveText } from '../agenda.js';
 import { SOURCE } from '../syllabus.js';
 
 const SECTIONS = [
-  ['understand', '💡 Understand'], ['workbench', '🧪 Workbench'],
+  ['explain', '🎞️ See the concept'], ['understand', '💡 Understand'], ['workbench', '🧪 Workbench'],
   ['compare', '⚖️ Compare'], ['debug', '🐞 Debug'], ['assess', '🏆 Challenge & quiz'],
 ];
 
@@ -22,16 +23,19 @@ function fanout(views) {
   return {
     setParams: p => call('setParams', p), setResult: r => call('setResult', r), setStep: st => call('setStep', st),
     clearRun: () => call('clearRun'), reset: () => call('reset'), flash: id => call('flash', id), select: id => call('select', id),
+    // The first view is the workbench: wait for its own idle signal or for its animations to finish.
+    idle: () => (views[0].idle ? views[0].idle() : animationsSettled(views[0].el)),
   };
 }
 
 export async function renderTopic(root, id) {
   const meta = findAgenda(id);
   if (!meta) { root.appendChild(h('p', 'Unknown topic.')); return; }
-  let mod, wbMod;
+  let mod, wbMod, scenes = null;
   try {
     mod = (await import(`../../content/${id}.js`)).default;
     wbMod = await import(`../workbenches/${mod.workbench}.js`);
+    scenes = (await import(`../explainer/${id}.js`).catch(() => ({ default: null }))).default;
   } catch (e) {
     root.appendChild(h('div.alert.tone-error', `The lab for ${id} could not be loaded: ${e.message}`));
     return;
@@ -64,6 +68,11 @@ export async function renderTopic(root, id) {
     progressEl,
     h('nav.section-nav', { 'aria-label': 'Sections' }, SECTIONS.map(([a, l]) => h('a', { href: `#/s/${id}`, onclick: e => { e.preventDefault(); document.getElementById(`sec-${a}`).scrollIntoView({ behavior: 'smooth' }); } }, l))));
 
+  const explainer = scenes ? createExplainer(scenes, { title: `${meta.title}: concept explainer` }) : null;
+  const explain = explainer ? section('explain', 'See the concept',
+    h('p.small', 'A short animated walkthrough of the core idea, one step at a time. Use Next / Back or the arrow keys; Presenter mode fills the screen.'),
+    explainer.el) : null;
+
   const c = mod.concept;
   const understand = section('understand', 'A. Understand the concept',
     h('div.two-col',
@@ -82,11 +91,22 @@ export async function renderTopic(root, id) {
   const viz = fanout([wb, graph]);
   const lab = createLab(mod, viz);
 
-  const workbench = section('workbench', `B–C. ${mod.lab}`,
-    h('p.small', 'Configure the lab below, then Run (all stages) or Step (one stage at a time). The workbench shows each stage happening; click anything in it to inspect it.'),
-    wb.el, lab.el,
-    h('details.arch', h('summary', 'Architecture and code views'),
+  const workbench = section('workbench', mod.lab,
+    h('p.small.wb-intro', 'Press ▶ Run to play every stage, or Next step to go one stage at a time while you explain. Click anything in the workbench to inspect it. Scenarios and ⚙ Settings change the input.'),
+    lab.toolbarEl, lab.settingsEl,
+    wb.el,
+    lab.detailsEl,
+    h('details.fold.arch', h('summary', 'Architecture and code views'),
       h('p.small', 'The same pipeline as Azure resources and SDK calls. Nodes light up as the simulation runs.'), graph.el));
+  workbench.classList.add('lab');
+  // One narration line: mirror the workbench's caption into the now bar above it.
+  const wbCaption = wb.el.querySelector('.wb-caption');
+  if (wbCaption) {
+    wbCaption.classList.add('mirrored');
+    const sync = () => lab.narrate(wbCaption.textContent);
+    new MutationObserver(sync).observe(wbCaption, { childList: true, characterData: true, subtree: true });
+    sync();
+  }
 
   // ---- D. compare ----
   const histEl = h('div');
@@ -218,11 +238,11 @@ export async function renderTopic(root, id) {
       h('div', h('h3', 'Go further'), mod.next.length ? h('ul', mod.next.map(p => h('li', link(p)))) : h('p.small', '—'))),
     h('nav.pager', prev ? h('a.btn', { href: `#/s/${prev.id}` }, `‹ ${prev.short}`) : h('span'), next ? h('a.btn', { href: `#/s/${next.id}` }, `${next.short} ›`) : h('span')));
 
-  root.append(header, understand, workbench, compare, debug, assess, recap);
-  return () => window.removeEventListener('progress', refreshProgress);
+  root.append(header, ...(explain ? [explain] : []), understand, workbench, compare, debug, assess, recap);
+  return () => { window.removeEventListener('progress', refreshProgress); if (explainer) explainer.stop(); };
 }
 
-const BADGES = { understand: ['A', '💡'], workbench: ['B', '🧪'], compare: ['D', '⚖️'], debug: ['E', '🐞'], assess: ['F', '🏆'] };
+const BADGES = { explain: ['', '🎞️'], understand: ['A', '💡'], workbench: ['B', '🧪'], compare: ['D', '⚖️'], debug: ['E', '🐞'], assess: ['F', '🏆'] };
 
 function section(anchor, title, ...kids) {
   const [letter, icon] = BADGES[anchor] || ['', ''];

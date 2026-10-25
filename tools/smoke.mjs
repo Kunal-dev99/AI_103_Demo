@@ -54,7 +54,7 @@ for (const id of ids) {
   const before = errors.length;
   try {
     await page.goto(`${base}#/s/${id}`);
-    await page.waitForSelector('.lab .controls', { timeout: 10000 });
+    await page.waitForSelector('.lab .controls', { state: 'attached', timeout: 10000 });
     await page.waitForSelector('.workbench', { timeout: 10000 });
     // architecture / code views
     await page.click('details.arch summary');
@@ -64,7 +64,7 @@ for (const id of ids) {
     // run instantly
     await page.selectOption('.lab select[aria-label="Animation speed"]', '0');
     await page.click('.lab .btn.primary');
-    await page.waitForSelector('.sim-output .output');
+    await page.waitForSelector('.sim-output .output', { state: 'attached' });
     // step mode
     await page.click('.lab .btn-row .btn:nth-child(2)');
     // samples

@@ -40,3 +40,21 @@ export function s(tag, attrs = {}, ...kids) {
 }
 
 export const fmtValue = v => (v == null ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v));
+
+// Resolves once every finite CSS animation/transition inside `el` has finished,
+// re-checking briefly afterwards in case finishing one stage started another.
+export function animationsSettled(el, { gap = 150, rounds = 6 } = {}) {
+  const active = () => (el.getAnimations ? el.getAnimations({ subtree: true }) : []).filter(a => {
+    const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null;
+    return t && Number.isFinite(t.endTime) && a.playState !== 'finished';
+  });
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  return (async () => {
+    for (let i = 0; i < rounds; i++) {
+      await wait(gap);
+      const list = active();
+      if (!list.length) return;
+      await Promise.all(list.map(a => a.finished.catch(() => {})));
+    }
+  })();
+}

@@ -441,6 +441,13 @@ export function createWorkbench(mod) {
       incoming.push(st);
       if (!flushT) flushT = setTimeout(flush, 0);
     },
+    // Resolves when every queued stage animation has played (used to keep the step log in sync).
+    idle() {
+      return new Promise(resolve => {
+        const check = () => (!busy && !pending.length && !incoming.length && !flushT) ? resolve() : setTimeout(check, 100);
+        setTimeout(check, 50);
+      });
+    },
     clearRun() { if (params) api.setParams(params); else { cancel(); res = null; rail.reset(); } },
     reset() { api.clearRun(); },
     flash(id) {
