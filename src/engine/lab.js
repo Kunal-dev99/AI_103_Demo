@@ -61,8 +61,8 @@ export function createLab(mod, viz) {
   const speedSel = h('select', { 'aria-label': 'Animation speed' }, h('option', { value: 900 }, 'Normal pace'), h('option', { value: 2200 }, 'Slow pace'), h('option', { value: 0 }, 'Instant'));
   const runBtn = h('button.btn.primary', { type: 'button', onclick: () => api.run() }, '▶ Run');
   const stepBtn = h('button.btn', { type: 'button', onclick: () => api.step() }, 'Next step ›');
-  const resetBtn = h('button.btn.ghost', { type: 'button', onclick: () => api.reset() }, '↺ Reset');
-  const settingsBtn = h('button.btn.ghost.settings-btn', { type: 'button', 'aria-expanded': 'false', onclick: () => toggleSettings() }, '⚙ Settings');
+  const resetBtn = h('button.btn.ghost', { type: 'button', onclick: () => api.reset() }, 'Reset');
+  const settingsBtn = h('button.btn.ghost.settings-btn', { type: 'button', 'aria-expanded': 'false', onclick: () => toggleSettings() }, 'Settings');
 
   const mode = MODES[sim.mode] || MODES.local;
   const provenance = h(`span.chip.prov-chip.tone-${mode.tone}`, { title: mode.text }, mode.label);

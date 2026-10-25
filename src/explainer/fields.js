@@ -115,7 +115,7 @@ export default [
         row.appendChild(k.text(250, y + 13, name, { size: 18, weight: 700, anchor: 'end', cls: 'mono' }));
         row.appendChild(k.bar(275, y, 360, c, { tone: ok ? 'ok' : 'warn', threshold: 0.8, d }));
         g.appendChild(k.a(row, d));
-        g.appendChild(k.a(k.chip(730, y + 14, ok ? '✓ auto-accept' : '👤 human review', { tone: ok ? 'ok' : 'warn', size: 15 }), d + 0.8, 'pop'));
+        g.appendChild(k.a(k.chip(730, y + 14, ok ? '✓ auto-accept' : 'human review', { tone: ok ? 'ok' : 'warn', size: 15 }), d + 0.8, 'pop'));
       });
       g.appendChild(k.a(k.text(275 + 360 * 0.8, 92, 'threshold 0.80', { size: 15, weight: 700, anchor: 'middle', cls: 'muted' }), 0.1));
     },
