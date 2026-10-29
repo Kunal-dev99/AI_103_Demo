@@ -1,7 +1,8 @@
-// Hash router. Routes: #/  #/s/<agendaTopicId>  #/coverage
+// Hash router. Routes: #/  #/briefing  #/s/<agendaTopicId>  #/coverage
 import { clear, h } from './engine/dom.js';
 import { renderHome, renderCoverage, renderNav } from './pages/overview.js';
 import { renderTopic } from './pages/topic.js';
+import { renderBriefing } from './pages/briefing.js';
 
 const main = document.getElementById('main');
 const nav = document.getElementById('nav');
@@ -18,6 +19,7 @@ async function route() {
     if (!kind) renderHome(main);
     else if (kind === 's') cleanup = await renderTopic(main, id);
     else if (kind === 'coverage') await renderCoverage(main);
+    else if (kind === 'briefing') cleanup = await renderBriefing(main);
     else main.appendChild(h('p', 'Page not found. ', h('a', { href: '#/' }, 'Go home')));
   } catch (e) {
     console.error(e);
