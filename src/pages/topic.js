@@ -8,8 +8,8 @@ import { AGENDA, findAgenda, objectiveText } from '../agenda.js';
 import { SOURCE } from '../syllabus.js';
 
 const SECTIONS = [
-  ['explain', '🎞️ See the concept'], ['understand', '💡 Understand'], ['workbench', '🧪 Workbench'],
-  ['scenarios', '🎓 Exam scenarios'], ['compare', '⚖️ Compare'], ['debug', '🐞 Debug'], ['assess', '🏆 Challenge & quiz'],
+  ['explain', 'Concept'], ['understand', 'Understand'], ['workbench', 'Workbench'],
+  ['scenarios', 'Exam-style cases'], ['compare', 'Compare'], ['debug', 'Debug'], ['assess', 'Assess'],
 ];
 
 const link = id => {
@@ -61,9 +61,9 @@ export async function renderTopic(root, id) {
   const header = h('header.hero.topic-hero',
     h('nav.crumbs', { 'aria-label': 'Breadcrumb' }, h('a', { href: '#/' }, 'Home'), ' › ', `Topic ${idx + 1} of ${AGENDA.length}`),
     h('div.hero-row',
-      h('span.hero-emoji', { 'aria-hidden': 'true' }, meta.emoji),
+      h('span.hero-num', String(idx + 1).padStart(2, '0')),
       h('div',
-        h('p.hero-eyebrow', `Topic ${idx + 1} · ${mod.lab}`),
+        h('p.overline', `Topic ${String(idx + 1).padStart(2, '0')} · ${mod.lab}`),
         h('h1', meta.title),
         h('p.hero-lead', meta.summary))),
     progressEl,
@@ -77,7 +77,7 @@ export async function renderTopic(root, id) {
   const c = mod.concept;
   const understand = section('understand', 'A. Understand the concept',
     meta.exam ? h('div.exam-box',
-      h('h3', '🎯 What the AI-103 exam expects'),
+      h('p.overline', 'AI-103 focus'), h('h3', 'What the exam expects'),
       h('ul', meta.exam.map(([point, obj]) => h('li', h('span', point), ' ', h('span.exam-obj', { title: objectiveText(obj) }, obj)))),
       h('p.small', 'Summarised from the official objective wording (hover a number to read it). These are study pointers, not actual exam questions.')) : null,
     h('div.two-col',
@@ -97,7 +97,7 @@ export async function renderTopic(root, id) {
   const lab = createLab(mod, viz);
 
   const workbench = section('workbench', mod.lab,
-    h('p.small.wb-intro', 'Press ▶ Run to play every stage, or Next step to go one stage at a time while you explain. Click anything in the workbench to inspect it. Scenarios and ⚙ Settings change the input.'),
+    h('p.small.wb-intro', 'Press Run to play every stage, or Next step to go one stage at a time while you explain. Click anything in the workbench to inspect it. Scenarios and ⚙ Settings change the input.'),
     lab.toolbarEl, lab.settingsEl,
     wb.el,
     lab.detailsEl,
@@ -123,7 +123,7 @@ export async function renderTopic(root, id) {
     const opts = sc.options.map((o, oi) => h('button.sc-opt', { type: 'button', onclick: () => play(sc, si, oi) },
       h('span.sc-letter', letter(oi)), h('span', o.label)));
     const card = h('article.sc-card', { id: `sc-${sc.id}` },
-      h('div.sc-head', h('span.sc-num', `Scenario ${si + 1}`), h('span.exam-obj', { title: objectiveText(sc.objective) }, sc.objective)),
+      h('div.sc-head', h('span.sc-num', `Case ${si + 1}`), h('span.exam-obj', { title: objectiveText(sc.objective) }, sc.objective)),
       h('h3', sc.title), h('p', sc.stem), h('p.sc-question', sc.question),
       h('div.sc-opts', opts),
       h('p.small.sc-hint', 'Pick an answer: the workbench above loads that choice and plays it, so you can see what would happen.'),
@@ -139,8 +139,8 @@ export async function renderTopic(root, id) {
     pendingScenario = { sc, si, oi };
     scenarioBanner.hidden = false;
     clear(scenarioBanner).append(
-      h('div.sb-main', h('strong', `🎓 Scenario ${si + 1}: ${sc.title}`), h('span', `Playing your choice ${letter(oi)}: “${o.label}”…`)),
-      h('button.btn.ghost.small', { type: 'button', onclick: () => card.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, '↩ Back to the scenario'));
+      h('div.sb-main', h('strong', `Case ${si + 1}: ${sc.title}`), h('span', `Playing your choice ${letter(oi)}: “${o.label}”…`)),
+      h('button.btn.ghost.small', { type: 'button', onclick: () => card.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 'Back to the case'));
     lab.load(o.values || {});
     document.getElementById('sec-workbench').scrollIntoView({ behavior: 'smooth' });
     setTimeout(() => lab.run(), 450);
@@ -159,17 +159,17 @@ export async function renderTopic(root, id) {
     clear(card._verdict).append(h(`div.alert.tone-${ok ? 'ok' : 'error'}`, verdict));
     card._opts.forEach((b, k) => { b.classList.toggle('right', k === correctIdx && ok); b.classList.toggle('wrong', k === oi && !ok); });
     clear(scenarioBanner).append(
-      h(`div.sb-main.tone-${ok ? 'ok' : 'error'}`, h('strong', `${ok ? '✓ Correct' : '✗ Not the best choice'} · Scenario ${si + 1}, choice ${letter(oi)}`), h('span', o.why)),
+      h(`div.sb-main.tone-${ok ? 'ok' : 'error'}`, h('strong', `${ok ? 'Correct' : 'Not the best choice'} · Case ${si + 1}, answer ${letter(oi)}`), h('span', o.why)),
       h('div.sb-actions',
-        ok ? null : h('button.btn.small', { type: 'button', onclick: () => play(sc, si, correctIdx) }, `▶ Play the best answer (${letter(correctIdx)})`),
-        h('button.btn.ghost.small', { type: 'button', onclick: () => card.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, '↩ Back to the scenario')));
+        ok ? null : h('button.btn.small', { type: 'button', onclick: () => play(sc, si, correctIdx) }, `Play the best answer (${letter(correctIdx)})`),
+        h('button.btn.ghost.small', { type: 'button', onclick: () => card.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 'Back to the case')));
     if (ok) {
       card.classList.add('done');
       const done = new Set(getProgress(id).scenariosCorrect || []); done.add(sc.id);
       setProgress(id, { scenariosCorrect: [...done] });
     }
   });
-  const scenarios = mod.scenarios ? section('scenarios', 'Exam-style scenarios',
+  const scenarios = mod.scenarios ? section('scenarios', 'Practise with exam-style cases',
     h('p.small', 'Short cases in the style of AI-103 questions, written for this site from the official objectives. They are not real exam questions. Each answer is wired to the workbench: choose one and watch what it does.'),
     h('div.sc-list', scenarioCards)) : null;
 
@@ -297,7 +297,7 @@ export async function renderTopic(root, id) {
     h('h3', 'Scenario-based knowledge check'), quizEl);
 
   const recap = h('section.section.recap',
-    h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '🎯'), 'Recap'), h('p', mod.recap),
+    h('div.sec-head', h('p.overline', 'Recap'), h('h2', 'Key takeaways')), h('p', mod.recap),
     h('div.two-col',
       h('div', h('h3', 'Build on'), mod.prereqs.length ? h('ul', mod.prereqs.map(p => h('li', link(p)))) : h('p.small', '—')),
       h('div', h('h3', 'Go further'), mod.next.length ? h('ul', mod.next.map(p => h('li', link(p)))) : h('p.small', '—'))),
@@ -307,12 +307,11 @@ export async function renderTopic(root, id) {
   return () => { window.removeEventListener('progress', refreshProgress); if (explainer) explainer.stop(); };
 }
 
-const BADGES = { explain: ['', '🎞️'], understand: ['A', '💡'], workbench: ['B', '🧪'], scenarios: ['', '🎓'], compare: ['D', '⚖️'], debug: ['E', '🐞'], assess: ['F', '🏆'] };
+const LABELS = { explain: 'Concept', understand: 'Understand', workbench: 'Workbench', scenarios: 'Exam-style cases', compare: 'Experiment', debug: 'Debug', assess: 'Assess' };
 
 function section(anchor, title, ...kids) {
-  const [letter, icon] = BADGES[anchor] || ['', ''];
   return h(`section.section.sec-${anchor}`, { id: `sec-${anchor}`, 'aria-labelledby': `h-${anchor}` },
-    h('h2.sec-title', { id: `h-${anchor}` }, h('span.sec-badge', { 'aria-hidden': 'true' }, icon), title.replace(/^[A-F](–[A-F])?\. /, '')), kids);
+    h('div.sec-head', h('p.overline', LABELS[anchor] || ''), h('h2', { id: `h-${anchor}` }, title.replace(/^[A-F](–[A-F])?\. /, ''))), kids);
 }
 
 function radio(group, n, current, on) {

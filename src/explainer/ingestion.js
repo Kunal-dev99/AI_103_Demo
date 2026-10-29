@@ -119,7 +119,7 @@ export default [
       md.appendChild(k.box(340, 270, 260, 150, { cls: 'ex-card' }));
       ['# Supplier invoice', '| Item | Qty | Amount |', '| --- | --- | --- |', '| Toner | 2 | 180.00 |'].forEach((t, n) => md.appendChild(k.text(355, 300 + n * 28, t, { size: 13, cls: 'mono' })));
       g.appendChild(k.a(md, 0.9, 'pop'));
-      [['🔎 Field extraction', 140], ['📚 Search index (RAG)', 250], ['🤖 Agents', 360]].forEach(([label, y], n) => {
+      [['Field extraction', 140], ['Search index (RAG)', 250], ['Agents', 360]].forEach(([label, y], n) => {
         g.appendChild(k.a(k.arrow(610, y < 250 ? 170 : y > 300 ? 340 : 250, 680, y - 6), 1.3 + n * 0.2, 'draw'));
         g.appendChild(k.a(k.chip(690, y, label, { tone: 'ok', size: 15 }), 1.4 + n * 0.2, 'pop'));
       });

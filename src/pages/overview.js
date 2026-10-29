@@ -11,46 +11,45 @@ export function loadModule(id) {
   return modCache[id];
 }
 
+const pad = n => String(n).padStart(2, '0');
+
 export function renderHome(root) {
   const prog = allProgress();
   const done = AGENDA.filter(a => isComplete(prog[a.id] || {})).length;
   root.append(
     h('header.hero.home-hero',
-      h('div.hero-deco', { 'aria-hidden': 'true' }, AGENDA.map((a, i) => h(`span.float.f${i}`, a.emoji))),
-      h('p.hero-eyebrow', 'Azure AI-103 · Document AI, hands-on'),
-      h('h1', 'Watch AI read, sort and understand your documents'),
-      h('p.hero-lead', 'Four interactive workbenches. Run a pipeline, watch every stage happen on the page, break it on purpose, then fix it.'),
+      h('p.overline', 'Azure AI-103 · Information extraction & content understanding'),
+      h('h1', 'See how AI reads, sorts and understands documents.'),
+      h('p.hero-lead', 'Four focused topics. Each one explains the idea, lets you run the pipeline step by step on real-looking content, and checks your understanding with exam-style cases.'),
       h('div.hero-cta',
-        h('a.btn.cta', { href: `#/s/${AGENDA[0].id}` }, '▶ Start with topic 1'),
-        h('span.hero-progress', h('strong', `${done}/${AGENDA.length}`), ' topics completed'))),
+        h('a.btn.primary', { href: `#/s/${AGENDA[0].id}` }, 'Start with topic 01'),
+        h('a.btn.ghost', { href: '#/coverage' }, 'How it maps to AI-103'),
+        h('span.hero-progress', `${done} of ${AGENDA.length} topics completed`))),
     h('section.section.agenda-section',
-      h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '🗺️'), 'The agenda'),
+      h('div.sec-head', h('p.overline', 'Agenda'), h('h2', 'Four topics')),
       h('div.agenda-grid', AGENDA.map((a, i) => h('a.agenda-card', { href: `#/s/${a.id}`, style: `--topic:${a.color};--topic-2:${a.color2}` },
         h('div.agenda-top',
-          h('span.agenda-emoji', { 'aria-hidden': 'true' }, a.emoji),
-          h('span.agenda-num', `Topic ${i + 1}`),
-          isComplete(prog[a.id] || {}) ? h('span.agenda-done', '★ done') : null),
-        h('div.agenda-body',
-          h('h3', a.title),
-          h('p', a.summary),
-          h('div.stage-chips', a.stages.map(s => h('span.stage-chip', s))),
-          h('span.agenda-go', 'Open workbench →')))))),
+          h('span.agenda-num', pad(i + 1)),
+          isComplete(prog[a.id] || {}) ? h('span.agenda-done', 'Completed') : null),
+        h('h3', a.title),
+        h('p', a.summary),
+        h('ul.agenda-stages', a.stages.map(st => h('li', st))),
+        h('span.agenda-go', 'Open topic →'))))),
     h('section.section',
-      h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '🧭'), 'How each topic works'),
-      h('ol.howto.steps-visual',
-        h('li', h('span.step-ico', '💡'), h('strong', 'Understand'), h('span', 'Plain-language and technical explanation, key terms, a real use case.')),
-        h('li', h('span.step-ico', '🧪'), h('strong', 'Watch it work'), h('span', 'The workbench shows the actual document, image, audio or video as each stage runs. Click anything to inspect it.')),
-        h('li', h('span.step-ico', '⚖️'), h('strong', 'Compare'), h('span', 'Every run is recorded; diff two runs setting by setting.')),
-        h('li', h('span.step-ico', '🐞'), h('strong', 'Debug'), h('span', 'Load a broken setup, find the cause, fix it.')),
-        h('li', h('span.step-ico', '🏆'), h('strong', 'Challenge & quiz'), h('span', 'A checked challenge, a walkthrough after you try, and a scenario quiz.')))),
+      h('div.sec-head', h('p.overline', 'Method'), h('h2', 'How each topic works')),
+      h('ol.steps-visual',
+        [['Concept', 'A short animated walkthrough of the core idea, one step at a time.'],
+          ['Workbench', 'The actual document, image, audio or video, processed stage by stage. Click anything to inspect it.'],
+          ['Exam-style cases', 'Business scenarios where each answer plays in the workbench, so you see why it is right or wrong.'],
+          ['Compare & debug', 'Diff two runs, then fix deliberately broken setups.'],
+          ['Assess', 'A checked challenge and a short quiz.']].map(([t, d], i) => h('li', h('span.step-num', pad(i + 1)), h('strong', t), h('span', d))))),
     h('section.section',
-      h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '🔬'), 'Where results come from'),
-      h('p', 'Nothing on this site calls Azure. Every run is labelled with where its results come from, and every number is tagged ', h('span.chip.tone-info', 'computed'), ' or ', h('span.chip.tone-warn', 'estimate'), '.'),
-      h('div.card-grid', Object.values(MODES).filter(m => m !== MODES.live).map(m => h(`div.card.provenance.tone-${m.tone}`, h('strong', m.label), h('p.small', m.text))))),
-    h('section.section',
-      h('h2.sec-title', h('span.sec-badge', { 'aria-hidden': 'true' }, '📈'), 'Progress'),
-      h('p.small', 'Progress is stored only in this browser. '),
-      h('button.btn.ghost', { type: 'button', onclick: () => { if (confirm('Clear all progress stored in this browser?')) { resetAll(); location.reload(); } } }, 'Reset my progress')));
+      h('div.sec-head', h('p.overline', 'Transparency'), h('h2', 'Where results come from')),
+      h('p', 'Nothing on this site calls Azure. Every run is labelled with where its results come from, and every number is marked as ', h('em', 'computed'), ' or ', h('em', 'estimate'), '.'),
+      h('div.card-grid', Object.values(MODES).filter(m => m !== MODES.live).map(m => h('div.card.mode-card', h('strong', m.label), h('p.small', m.text))))),
+    h('section.section.quiet',
+      h('p.small', 'Progress is stored only in this browser. ',
+        h('button.linklike', { type: 'button', onclick: () => { if (confirm('Clear all progress stored in this browser?')) { resetAll(); location.reload(); } } }, 'Reset progress'))));
 }
 
 export async function renderCoverage(root) {
@@ -77,8 +76,10 @@ export async function renderCoverage(root) {
 export function renderNav(nav, currentHash) {
   clear(nav);
   const p = allProgress();
-  nav.appendChild(h('a.nav-home', { href: '#/' }, 'Document AI Concept Lab'));
+  
+  nav.appendChild(h('p.nav-label', 'Topics'));
   nav.appendChild(h('ol.nav-agenda', AGENDA.map((a, i) => h('li', h('a', { href: `#/s/${a.id}`, class: currentHash === `#/s/${a.id}` ? 'current' : null, style: `--topic:${a.color};--topic-2:${a.color2}` },
-    h('span.nav-emoji', { 'aria-hidden': 'true' }, a.emoji), h('span.nav-text', h('small', `Topic ${i + 1}`), a.title), isComplete(p[a.id] || {}) ? ' ★' : '')))));
-  nav.appendChild(h('a.nav-link', { href: '#/coverage' }, 'Agenda coverage'));
+    h('span.nav-num', String(i + 1).padStart(2, '0')), h('span.nav-text', a.title), isComplete(p[a.id] || {}) ? h('span.nav-done', { title: 'Completed' }, '✓') : null)))));
+  nav.appendChild(h('p.nav-label', 'Reference'));
+  nav.appendChild(h('a.nav-link', { href: '#/coverage', class: currentHash === '#/coverage' ? 'current' : null }, 'AI-103 coverage'));
 }

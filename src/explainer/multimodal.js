@@ -90,7 +90,7 @@ export default [
           return t;
         },
       ];
-      const names = ['📄 Document', '🖼️ Image', '🎧 Audio', '🎬 Video'];
+      const names = ['Document', 'Image', 'Audio', 'Video'];
       tiles.forEach((make, i) => {
         g.appendChild(k.a(make(), i * 0.3, 'pop'));
         g.appendChild(k.a(k.text(X[i] + TW / 2, Y + TH + 36, names[i], { size: 20, weight: 700, anchor: 'middle' }), i * 0.3 + 0.2));
@@ -111,18 +111,17 @@ export default [
     dur: 8000,
     draw(g, k) {
       const rows = [
-        ['📄', 'Document', ['text', 'layout: title · table · ☑']],
-        ['🖼️', 'Image', ['caption', 'objects', 'text in image']],
-        ['🎧', 'Audio', ['transcript', '⏱ timestamps']],
-        ['🎬', 'Video', ['shots · keyframes', 'transcript']],
+        ['', 'Document', ['text', 'layout: title · table · ☑']],
+        ['', 'Image', ['caption', 'objects', 'text in image']],
+        ['', 'Audio', ['transcript', 'timestamps']],
+        ['', 'Video', ['shots · keyframes', 'transcript']],
       ];
       const Y0 = 52, RH = 108;
       rows.forEach(([emo, name, chips], r) => {
         const cy = Y0 + r * RH + 40, d = r * 0.45;
         const icon = k.s('g');
         icon.appendChild(k.box(40, cy - 34, 170, 68, { cls: 'ex-card', r: 14 }));
-        icon.appendChild(k.text(62, cy + 10, emo, { size: 28 }));
-        icon.appendChild(k.text(104, cy + 8, name, { size: 19, weight: 700 }));
+        icon.appendChild(k.text(125, cy + 7, name, { size: 19, weight: 600, anchor: 'middle' }));
         g.appendChild(k.a(icon, d, 'slide'));
         g.appendChild(k.a(k.arrow(222, cy, 270, cy), d + 0.25, 'draw'));
         let cx = 284;
@@ -135,7 +134,7 @@ export default [
       });
       const brain = k.s('g');
       brain.appendChild(k.s('circle', { cx: 840, cy: 260, r: 72, style: 'fill: color-mix(in srgb, var(--topic) 16%, var(--surface)); stroke: var(--topic); stroke-width: 3' }));
-      brain.appendChild(k.text(840, 254, '🧠', { size: 40, anchor: 'middle' }));
+      brain.appendChild(k.text(840, 254, '', { size: 40, anchor: 'middle' }));
       brain.appendChild(k.text(840, 290, 'model', { size: 18, weight: 800, anchor: 'middle' }));
       g.appendChild(k.a(brain, 2.6, 'pop'));
     },
@@ -148,7 +147,7 @@ export default [
     draw(g, k) {
       const X = 150, WD = 740;
       // ---- audio ----
-      g.appendChild(k.a(k.text(40, 152, '🎧 Call', { size: 18, weight: 700 }), 0));
+      g.appendChild(k.a(k.text(40, 152, 'Call', { size: 18, weight: 700 }), 0));
       const N = 60, grey = bars(k, X, 146, WD, 46, N);
       grey.forEach((b, i) => g.appendChild(k.a(b, i * 0.008, 'in')));
       const turns = [[0, 0.24, 1], [0.24, 0.52, 2], [0.52, 0.7, 1], [0.7, 1, 2]];
@@ -165,7 +164,7 @@ export default [
         g.appendChild(k.a(lbl, d + 0.1, 'pop'));
       });
       // ---- video ----
-      g.appendChild(k.a(k.text(40, 322, '🎬 Video', { size: 18, weight: 700 }), 0.2));
+      g.appendChild(k.a(k.text(40, 322, 'Video', { size: 18, weight: 700 }), 0.2));
       const shotOf = [0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 3, 3];
       const f = film(k, X, 272, WD, 92, shotOf);
       g.appendChild(k.a(f.g, 0.2, 'in'));
@@ -203,7 +202,7 @@ export default [
       const p = photo(k, 60, 30, 300, 130);
       g.appendChild(k.a(p.g, 0, 'in'));
       g.appendChild(k.a(k.s('rect', { x: p.dent.x, y: p.dent.y, width: p.dent.w, height: p.dent.h, rx: 6, class: 'ex-region' }), 0.5, 'pop'));
-      g.appendChild(k.a(fieldCard(k, CX, 40, CW, 'Damage type', 'Crushed', '📍 box on parcel photo'), 0.8, 'slide'));
+      g.appendChild(k.a(fieldCard(k, CX, 40, CW, 'Damage type', 'Crushed', 'box on parcel photo'), 0.8, 'slide'));
       g.appendChild(k.a(k.arrow(CX - 8, 86, p.dent.x + p.dent.w + 10, p.dent.y + p.dent.h / 2, { curve: 10 }), 1.0, 'draw'));
 
       // row 2: audio with time range
@@ -216,7 +215,7 @@ export default [
       range.appendChild(k.s('rect', { x: rx0, y: AY - 44, width: rw, height: 88, rx: 6, style: 'fill: color-mix(in srgb, var(--topic) 22%, transparent); stroke: var(--topic); stroke-width: 2.5' }));
       bars(k, AX + 12, AY, AW - 24, 34, N, { style: TOPIC }).slice(hl[0], hl[1]).forEach(b => range.appendChild(b));
       g.appendChild(k.a(range, 1.3, 'pop'));
-      g.appendChild(k.a(fieldCard(k, CX, 209, CW, 'Refund offered', '£120', '⏱ call 00:59 – 01:11'), 1.5, 'slide'));
+      g.appendChild(k.a(fieldCard(k, CX, 209, CW, 'Refund offered', '£120', 'call 00:59 – 01:11'), 1.5, 'slide'));
       g.appendChild(k.a(k.arrow(CX - 8, 255, rx0 + rw + 10, AY, { curve: 0 }), 1.7, 'draw'));
 
       // row 3: video with time range
@@ -225,7 +224,7 @@ export default [
       g.appendChild(k.a(f.g, 0.4, 'in'));
       const vx = f.fx(5) - 2, vw = f.fw * 2 + 4;
       g.appendChild(k.a(k.s('rect', { x: vx, y: 372, width: vw, height: 96, rx: 6, style: 'fill: color-mix(in srgb, var(--topic) 20%, transparent); stroke: var(--topic); stroke-width: 3' }), 2.0, 'pop'));
-      g.appendChild(k.a(fieldCard(k, CX, 376, CW, 'What happened', 'Parcel dropped', '⏱ video 00:29 – 00:36'), 2.2, 'slide'));
+      g.appendChild(k.a(fieldCard(k, CX, 376, CW, 'What happened', 'Parcel dropped', 'video 00:29 – 00:36'), 2.2, 'slide'));
       g.appendChild(k.a(k.arrow(CX - 8, 422, vx + vw + 10, 420, { curve: 0 }), 2.4, 'draw'));
     },
   },
@@ -256,7 +255,7 @@ export default [
 
       // ---- classify ----
       x = COLS[1]; d = 0.8;
-      head(x, d, '🏷️ Classify', 'pick from categories');
+      head(x, d, 'Classify', 'pick from categories');
       const ph = photo(k, x + 45, 100, 180, 70);
       g.appendChild(k.a(ph.g, d + 0.2, 'pop'));
       const cats = ['crushed', 'wet', 'torn', 'none'];
@@ -311,7 +310,7 @@ export default [
       // agent
       const ag = k.s('g');
       ag.appendChild(k.s('circle', { cx: 480, cy: 250, r: 56, style: 'fill: color-mix(in srgb, var(--topic) 16%, var(--surface)); stroke: var(--topic); stroke-width: 3' }));
-      ag.appendChild(k.text(480, 256, '🤖', { size: 40, anchor: 'middle' }));
+      ag.appendChild(k.text(480, 256, '', { size: 40, anchor: 'middle' }));
       ag.appendChild(k.text(480, 334, 'agent / RAG', { size: 17, weight: 800, anchor: 'middle' }));
       g.appendChild(k.a(ag, 0.9, 'pop'));
       // chat
@@ -326,8 +325,8 @@ export default [
       ans.appendChild(k.text(620, 216, 'on the customer call.', { size: 19, weight: 700 }));
       g.appendChild(k.a(ans, 2.0, 'pop'));
       g.appendChild(k.a(k.text(620, 280, 'Sources', { size: 15, cls: 'muted', weight: 700 }), 2.4));
-      g.appendChild(k.a(k.chip(620, 318, '⏱ call-0193.wav · 00:59–01:11', { tone: 'ok', size: 15 }), 2.5, 'pop'));
-      g.appendChild(k.a(k.chip(620, 362, '📍 claim form · p.1 · amount box', { tone: 'ok', size: 15 }), 2.7, 'pop'));
+      g.appendChild(k.a(k.chip(620, 318, 'call-0193.wav · 00:59–01:11', { tone: 'ok', size: 15 }), 2.5, 'pop'));
+      g.appendChild(k.a(k.chip(620, 362, 'claim form · p.1 · amount box', { tone: 'ok', size: 15 }), 2.7, 'pop'));
     },
   },
 ];

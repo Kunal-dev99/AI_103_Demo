@@ -73,9 +73,9 @@ export function createExplainer(scenes, { title = 'Concept explainer', topicColo
   const progress = h('div.ex-progress', { role: 'tablist', 'aria-label': 'Scenes' });
   const backBtn = h('button.btn.ex-back', { type: 'button', 'aria-label': 'Previous scene', onclick: () => go(i - 1) }, '‹ Back');
   const nextBtn = h('button.btn.primary.ex-next', { type: 'button', 'aria-label': 'Next scene', onclick: () => go(i + 1) }, 'Next ›');
-  const playBtn = h('button.btn.ghost.ex-play', { type: 'button', onclick: () => setPlaying(!playing) }, '▶ Auto-play');
-  const notesBtn = h('button.btn.ghost.ex-notes-btn', { type: 'button', 'aria-pressed': 'false', onclick: () => setNotes(!notesOn) }, '📝 More detail');
-  const fsBtn = h('button.btn.ghost.ex-fs', { type: 'button', onclick: () => toggleFullscreen() }, '⛶ Presenter mode');
+  const playBtn = h('button.btn.ghost.ex-play', { type: 'button', onclick: () => setPlaying(!playing) }, 'Auto-play');
+  const notesBtn = h('button.btn.ghost.ex-notes-btn', { type: 'button', 'aria-pressed': 'false', onclick: () => setNotes(!notesOn) }, 'More detail');
+  const fsBtn = h('button.btn.ghost.ex-fs', { type: 'button', onclick: () => toggleFullscreen() }, 'Presenter mode');
   const replayBtn = h('button.btn.ghost', { type: 'button', 'aria-label': 'Replay scene', onclick: () => go(i, true) }, '↻');
 
   scenes.forEach((sc, k) => progress.appendChild(h('button.ex-seg', { type: 'button', role: 'tab', 'aria-label': `Scene ${k + 1}: ${sc.title}`, onclick: () => go(k) }, h('span'))));
@@ -102,7 +102,7 @@ export function createExplainer(scenes, { title = 'Concept explainer', topicColo
     counter.textContent = `${i + 1} / ${scenes.length}`;
     progress.querySelectorAll('.ex-seg').forEach((b, k) => { b.classList.toggle('done', k < i); b.classList.toggle('cur', k === i); b.setAttribute('aria-selected', String(k === i)); });
     backBtn.disabled = i === 0;
-    nextBtn.textContent = i === scenes.length - 1 ? 'Start again ↺' : 'Next ›';
+    nextBtn.textContent = i === scenes.length - 1 ? 'Start again' : 'Next ›';
     if (playing) schedule();
   }
   function go(k, replay) {
@@ -116,7 +116,7 @@ export function createExplainer(scenes, { title = 'Concept explainer', topicColo
     timer = setTimeout(() => { if (i < scenes.length - 1) go(i + 1); else setPlaying(false); }, scenes[i].dur || 7000);
   }
   function setPlaying(on) {
-    playing = on; playBtn.textContent = on ? '⏸ Pause' : '▶ Auto-play';
+    playing = on; playBtn.textContent = on ? 'Pause' : 'Auto-play';
     if (on) schedule(); else clearTimeout(timer);
   }
   function setNotes(on) { notesOn = on; notesEl.hidden = !on; notesBtn.setAttribute('aria-pressed', String(on)); }
@@ -124,7 +124,7 @@ export function createExplainer(scenes, { title = 'Concept explainer', topicColo
     if (document.fullscreenElement) document.exitFullscreen?.();
     else (el.requestFullscreen ? el.requestFullscreen() : Promise.reject()).catch(() => el.classList.toggle('pseudo-fs'));
   }
-  document.addEventListener('fullscreenchange', () => { fsBtn.textContent = document.fullscreenElement === el ? '✕ Exit presenter mode' : '⛶ Presenter mode'; });
+  document.addEventListener('fullscreenchange', () => { fsBtn.textContent = document.fullscreenElement === el ? 'Exit presenter mode' : 'Presenter mode'; });
   el.addEventListener('keydown', e => {
     if (e.target.closest('button') && (e.key === ' ' || e.key === 'Enter')) return;
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(i + 1); }

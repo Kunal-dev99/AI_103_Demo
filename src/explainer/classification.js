@@ -38,7 +38,7 @@ export default [
     dur: 7500,
     draw(g, k) {
       g.appendChild(k.a(k.box(50, 50, 380, 420, { cls: 'ex-card', r: 18 }), 0, 'pop'));
-      g.appendChild(k.a(k.text(240, 90, '📥 Inbox', { size: 22, weight: 800, anchor: 'middle' }), 0.1));
+      g.appendChild(k.a(k.text(240, 90, 'Inbox', { size: 22, weight: 800, anchor: 'middle' }), 0.1));
       const docs = ['Invoice', 'Receipt', 'Contract', 'ID card', 'Purchase order', 'Letter'];
       docs.forEach((d, i) => {
         const c = i % 3, r = Math.floor(i / 3);
@@ -93,7 +93,7 @@ export default [
       g.appendChild(k.a(doc(k, 70, 285, 100, 120, 'Contract?', { size: 15 }), 1.0, 'pop'));
       g.appendChild(k.a(k.bar(BX, 340, BW, 0.58, { tone: 'warn', d: 1.3 }), 1.2));
       g.appendChild(k.a(k.arrow(620, 348, 680, 348), 2.1, 'draw'));
-      g.appendChild(k.a(lane(k, 690, 320, 220, 56, '👤 Human review', { cls: 'ex-word tone-warn' }), 2.3, 'pop'));
+      g.appendChild(k.a(lane(k, 690, 320, 220, 56, 'Human review', { cls: 'ex-word tone-warn' }), 2.3, 'pop'));
     },
   },
   {
@@ -167,14 +167,14 @@ export default [
       });
       // Payables → ERP is down
       g.appendChild(k.a(k.arrow(452, 76, 600, 76), 1.3, 'draw'));
-      g.appendChild(k.a(lane(k, 610, 50, 180, 52, '🧾 ERP', { cls: 'ex-word tone-error' }), 1.4, 'pop'));
+      g.appendChild(k.a(lane(k, 610, 50, 180, 52, 'ERP', { cls: 'ex-word tone-error' }), 1.4, 'pop'));
       g.appendChild(k.a(k.chip(712, 82, 'down', { tone: 'error', size: 14 }), 1.6, 'pop'));
       // retries: each delivery attempt fails
       [0, 1, 2].forEach(n => g.appendChild(k.a(k.chip(466 + n * 90, 140, `✗ try ${n + 1}`, { tone: 'error', size: 13 }), 1.7 + n * 0.25, 'pop')));
       g.appendChild(k.a(k.text(599, 186, 'retries fail', { size: 15, anchor: 'middle', cls: 'muted' }), 2.3));
       // dead-letter queue
       g.appendChild(k.a(k.arrow(770, 108, 770, 300), 2.3, 'draw'));
-      g.appendChild(k.a(lane(k, 580, 310, 330, 64, '🗄 Dead-letter queue', { cls: 'ex-word tone-warn', size: 19 }), 2.5, 'pop'));
+      g.appendChild(k.a(lane(k, 580, 310, 330, 64, 'Dead-letter queue', { cls: 'ex-word tone-warn', size: 19 }), 2.5, 'pop'));
       g.appendChild(k.a(k.chip(600, 420, 'kept safe · resubmit when ERP is back', { tone: 'ok', size: 15 }), 2.7, 'pop'));
     },
   },
