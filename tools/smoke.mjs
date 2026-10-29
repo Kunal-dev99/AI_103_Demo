@@ -49,7 +49,7 @@ const page = await newPage(1280);
   await page.goto(`${base}#/briefing`);
   await page.waitForSelector('.bf-agenda');
   const mods = await page.locator('.bf-module').count();
-  if (mods !== 4) failures.push(`briefing: ${mods}/4 archetype modules rendered`);
+  if (mods !== 5) failures.push(`briefing: ${mods}/5 archetype modules rendered`);
   if (await page.locator('.bf-module .alert.tone-error').count()) failures.push('briefing: a visual failed to load');
   const qs = await page.locator('.bf-questions .sc-card').count();
   for (let i = 0; i < qs; i++) await page.locator('.bf-questions .sc-card').nth(i).locator('.sc-opt').first().click();

@@ -271,7 +271,7 @@ export default {
   id: 'security',
   n: 3,
   title: 'Multi-modal security & prompt injection shielding',
-  minutes: 12,
+  minutes: 8,
   crux: 'Anything the pipeline reads (document text, OCR from images, metadata, tool output) is untrusted data that can carry instructions; scan it with Prompt Shields for document attacks before an LLM or tool acts on it, and limit what the agent can do if something slips through.',
   rules: [
     ['Uploaded files, images or tool output could contain hidden instructions that an agent will read', 'Prompt Shields, document attacks (pass the extracted text as documents)', 'Detects indirect prompt injection before the text reaches the model.'],

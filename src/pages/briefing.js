@@ -1,12 +1,12 @@
 // 60-minute exam briefing: the four Document Intelligence question archetypes, in presenting order.
 import { h, clear, append } from '../engine/dom.js';
 
-const MODULES = ['a1-model', 'a2-ingestion', 'a3-security', 'a4-troubleshoot'];
+const MODULES = ['a1-model', 'a5-cu', 'a2-ingestion', 'a3-security', 'a4-troubleshoot'];
 const pad = n => String(n).padStart(2, '0');
 
 export async function renderBriefing(root) {
   const mods = await Promise.all(MODULES.map(f => import(`../briefing/${f}.js`).then(m => m.default).catch(() => null)));
-  const agenda = [['intro', 'Intro', 5], ...mods.map((m, i) => [`a${i + 1}`, m ? m.title.split(':')[0] : `Archetype ${i + 1}`, m ? m.minutes : 12]), ['wrap', 'Recap', 7]];
+  const agenda = [['intro', 'Intro', 4], ...mods.map((m, i) => [`a${i + 1}`, m ? m.title.split(':')[0] : `Archetype ${i + 1}`, m ? m.minutes : 12]), ['wrap', 'Recap', 8]];
   const total = agenda.reduce((a, x) => a + x[2], 0);
 
   // ---- agenda bar with presenter timer ----
@@ -35,8 +35,8 @@ export async function renderBriefing(root) {
 
   // ---- intro ----
   const intro = h('section.section', { id: 'bf-intro' },
-    h('div.sec-head', h('p.overline', '00 · 5 min'), h('h2', 'How these questions work')),
-    h('p', 'In the AI-103 domain ', h('em', 'Implement information extraction solutions'), ', Document Intelligence questions are not trivia. Each one is a short scenario with a constraint, and you are asked for the design choice, the integration step or the fix.'),
+    h('div.sec-head', h('p.overline', '00 · 4 min'), h('h2', 'How these questions work')),
+    h('p', 'In the AI-103 domain ', h('em', 'Implement information extraction solutions'), ', Document Intelligence and Content Understanding questions are not trivia. Each one is a short scenario with a constraint, and you are asked for the design choice, the integration step or the fix.'),
     h('div.bf-anatomy',
       [['Scenario', 'What documents, what system, who uses it.'], ['Constraint', 'No labelled data, this sprint, tables needed, users upload files, 429 errors…'], ['Crux', 'The one fact that decides the answer.'], ['Answer', 'The least-effort option that satisfies the constraint.']]
         .map(([t, d], i) => h('div', h('span.step-num', pad(i + 1)), h('strong', t), h('span.small', d)))),
@@ -66,11 +66,12 @@ export async function renderBriefing(root) {
 
   // ---- wrap-up ----
   const wrap = h('section.section', { id: 'bf-wrap' },
-    h('div.sec-head', h('p.overline', `${pad(5)} · 7 min`), h('h2', 'Checklist & recap')),
+    h('div.sec-head', h('p.overline', `${pad(mods.length + 1)} · 8 min`), h('h2', 'Checklist & recap')),
     h('div.table-wrap', h('table.bf-rules',
       h('thead', h('tr', h('th', 'Area'), h('th', 'What you must be able to do'))),
       h('tbody', [
         ['Model selection', 'Pick prebuilt vs custom template vs custom neural vs generative from document type, layout variability, labelled data and implied values.'],
+        ['Content Understanding', 'Define an analyzer per modality with a field schema; choose extract, classify (with categories) or generate; turn on grounding for citations; use pro mode for cross-document checks.'],
         ['Data types', 'Tell structured (forms, tables) from semi-structured (invoices, manifests) from unstructured (contracts, reports).'],
         ['Search ingestion', 'Extract text and tables → chunk on layout boundaries → tag metadata → index in Azure AI Search for grounded RAG.'],
         ['Security & safety', 'Recognise indirect prompt injection in uploaded files; filter extracted text with Prompt Shields (document attacks) before an LLM or tool sees it.'],
@@ -81,8 +82,8 @@ export async function renderBriefing(root) {
 
   root.append(
     h('header.hero', h('p.overline', 'Exam briefing · 60 minutes'),
-      h('h1', 'Document Intelligence on the AI-103 exam'),
-      h('p.hero-lead', 'Four question archetypes, each with its decision rules, a visual you can drive live, and practice questions. Follow the agenda bar; start the timer when you begin.')),
+      h('h1', 'Document Intelligence and Content Understanding on the AI-103 exam'),
+      h('p.hero-lead', 'Five question archetypes, each with its decision rules, a visual you can drive live, and practice questions. Follow the agenda bar; start the timer when you begin.')),
     agendaEl, intro, ...sections, wrap);
   return () => { if (timer) clearInterval(timer); };
 }
