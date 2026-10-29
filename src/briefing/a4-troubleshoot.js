@@ -192,7 +192,7 @@ export default {
   id: 'troubleshoot',
   n: 4,
   title: 'System architecture & troubleshooting',
-  minutes: 9,
+  minutes: 8,
   crux: 'Read the symptoms, name the broken layer of the pipeline first (extraction, chunking, indexing, retrieval, generation, citations), and only then pick the fix; for 429s, back off instead of hammering.',
   rules: [
     ['Irrelevant citations and recent documents missing', 'Investigate ingestion: extraction quality, chunk boundaries, index freshness', 'The model can only cite what was extracted, chunked and indexed. Not an LLM problem.'],

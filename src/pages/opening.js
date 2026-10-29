@@ -380,7 +380,7 @@ export function renderOpening(root) {
     h('div.hero-cta', h('a.btn.primary', { href: '#/briefing' }, 'Start the exam briefing →'), h('a.btn', { href: '#/s/ingestion' }, 'Open the labs')));
 
   root.append(
-    h('header.hero.op-hero', h('p.overline', 'Start here · about 10 minutes'),
+    h('header.hero.op-hero', h('p.overline', 'Start here · minutes 0–8 of the hour'),
       h('h1', 'Before any Azure service: what problem are we solving?'),
       h('p.hero-lead', 'Six questions to ask the room. Each one has a visual to drive and an answer that stays hidden until you reveal it.')),
     rail, ...sections, closing);

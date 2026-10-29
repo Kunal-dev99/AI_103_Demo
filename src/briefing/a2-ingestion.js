@@ -265,7 +265,7 @@ export default {
   id: 'ingestion',
   n: 2,
   title: 'Parsing & ingestion pipeline integration',
-  minutes: 10,
+  minutes: 9,
   crux: 'Match the extraction mode to what is on the page (text only, structure, or tiny print), then chunk along the structure, attach metadata as fields and embed, so retrieval returns whole facts with precise citations.',
   rules: [
     ['You only need the text (lines, words, confidence) for search or translation', 'prebuilt-read (OCR)', 'Cheapest text extraction; no tables, checkboxes or roles.'],

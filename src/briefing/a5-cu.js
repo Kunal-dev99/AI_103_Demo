@@ -113,7 +113,7 @@ export default {
   id: 'cu',
   n: 5,
   title: 'Content Understanding: analyzers, field methods and grounding',
-  minutes: 12,
+  minutes: 11,
   crux: 'Content Understanding is the generative, multimodal option: you define an analyzer (base analyzer + field schema), choose a method per field, turn on grounding for citations, and use pro mode only when the answer needs reasoning across several inputs.',
   rules: [
     ['Values must be inferred or written (end date from term, a summary), no labelled data', 'Content Understanding analyzer, generate method', 'Generative extraction from field descriptions, zero-shot.'],
