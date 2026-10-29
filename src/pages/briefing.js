@@ -42,6 +42,7 @@ export async function renderBriefing(root) {
         .map(([t, d], i) => h('div', h('span.step-num', pad(i + 1)), h('strong', t), h('span.small', d)))),
     h('div.bf-archetypes', mods.map((m, i) => h('a.bf-arch', { href: '#/briefing', onclick: e => { e.preventDefault(); document.getElementById(`bf-a${i + 1}`)?.scrollIntoView({ behavior: 'smooth' }); } },
       h('span.agenda-num', pad(i + 1)), h('strong', m ? m.title : 'Coming soon'), m ? h('span.small', m.crux) : null))),
+    h('p.small', 'Opening the session? Start with ', h('a', { href: '#/start' }, 'the six opening questions'), ': document vs content, how people read, and what problem these services solve.'),
     h('p.small', 'Questions below are written for this briefing in the style of the exam. They are not real exam questions.'));
 
   // ---- archetype modules ----

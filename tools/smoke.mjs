@@ -56,6 +56,27 @@ const page = await newPage(1280);
   if (await page.locator('.bf-questions .alert').count() !== qs) failures.push('briefing: not every question revealed an answer');
   await page.click('.bf-timer .btn');
 }
+// opening: six chapters, every visual drivable, every answer revealable
+{
+  await page.goto(`${base}#/start`);
+  await page.waitForSelector('.op-ch');
+  const chs = await page.locator('.op-ch').count();
+  if (chs !== 6) failures.push(`opening: ${chs}/6 chapters rendered`);
+  await page.click('.op-ch >> nth=0 >> text=Reveal all');
+  if (await page.locator('.op-venn:not([hidden])').count() !== 1) failures.push('opening: document/content diagram did not appear');
+  await page.locator('#op-2 button', { hasText: 'Next' }).click();
+  await page.locator('#op-2 .op-steps li.now').waitFor({ timeout: 3000 }).catch(() => failures.push('opening: reading steps did not advance'));
+  for (const m of ['pixels', 'ocr', 'layout', 'fields', 'see']) await page.click(`#op-3 .op-seg button[data-m="${m}"]`);
+  await page.locator('#op-3 .op-seg button[data-m="fields"]').click();
+  await page.locator('#op-3 .op-fields button').first().hover();
+  await page.locator('#op-5 .op-claim-row').nth(4).click();
+  if (!(await page.locator('#op-5 .op-wave span.hit').count())) failures.push('opening: claim field did not highlight its audio source');
+  await page.locator('#op-6 .op-seg button').nth(1).click();
+  await page.fill('#op-4 input[aria-label="Documents per day"]', '5000').catch(() => {});
+  for (let i = 0; i < chs; i++) await page.locator('.op-reveal').nth(i).click();
+  if (await page.locator('.op-answer:not([hidden])').count() !== chs) failures.push('opening: not every answer revealed');
+  await page.keyboard.press('ArrowRight');
+}
 for (const route of ['#/', '#/coverage']) {
   await page.goto(`${base}${route}`);
   await page.waitForSelector('main h1');
@@ -143,7 +164,7 @@ for (const id of ids) {
 
 // phone-width overflow check on a sample of pages
 const phone = await newPage(390);
-for (const route of ['#/', '#/coverage', '#/briefing', ...ids.slice(0, 64).map(id => `#/s/${id}`)]) {
+for (const route of ['#/', '#/start', '#/coverage', '#/briefing', ...ids.slice(0, 64).map(id => `#/s/${id}`)]) {
   await phone.goto(`${base}${route}`);
   await phone.waitForSelector('main h1');
   if (route.startsWith('#/s/')) { await phone.selectOption('.lab select[aria-label="Animation speed"]', '0'); await phone.click('.lab .btn.primary'); }
