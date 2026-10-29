@@ -44,6 +44,18 @@ async function newPage(width) {
 const overflow = page => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 const page = await newPage(1280);
+// exam briefing: all four archetypes load, every question reveals an answer
+{
+  await page.goto(`${base}#/briefing`);
+  await page.waitForSelector('.bf-agenda');
+  const mods = await page.locator('.bf-module').count();
+  if (mods !== 4) failures.push(`briefing: ${mods}/4 archetype modules rendered`);
+  if (await page.locator('.bf-module .alert.tone-error').count()) failures.push('briefing: a visual failed to load');
+  const qs = await page.locator('.bf-questions .sc-card').count();
+  for (let i = 0; i < qs; i++) await page.locator('.bf-questions .sc-card').nth(i).locator('.sc-opt').first().click();
+  if (await page.locator('.bf-questions .alert').count() !== qs) failures.push('briefing: not every question revealed an answer');
+  await page.click('.bf-timer .btn');
+}
 for (const route of ['#/', '#/coverage']) {
   await page.goto(`${base}${route}`);
   await page.waitForSelector('main h1');
@@ -131,7 +143,7 @@ for (const id of ids) {
 
 // phone-width overflow check on a sample of pages
 const phone = await newPage(390);
-for (const route of ['#/', '#/coverage', ...ids.slice(0, 64).map(id => `#/s/${id}`)]) {
+for (const route of ['#/', '#/coverage', '#/briefing', ...ids.slice(0, 64).map(id => `#/s/${id}`)]) {
   await phone.goto(`${base}${route}`);
   await phone.waitForSelector('main h1');
   if (route.startsWith('#/s/')) { await phone.selectOption('.lab select[aria-label="Animation speed"]', '0'); await phone.click('.lab .btn.primary'); }

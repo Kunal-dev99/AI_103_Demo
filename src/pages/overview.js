@@ -22,7 +22,8 @@ export function renderHome(root) {
       h('h1', 'See how AI reads, sorts and understands documents.'),
       h('p.hero-lead', 'Four focused topics. Each one explains the idea, lets you run the pipeline step by step on real-looking content, and checks your understanding with exam-style cases.'),
       h('div.hero-cta',
-        h('a.btn.primary', { href: `#/s/${AGENDA[0].id}` }, 'Start with topic 01'),
+        h('a.btn.primary', { href: '#/briefing' }, 'Open the 60-minute exam briefing'),
+        h('a.btn', { href: `#/s/${AGENDA[0].id}` }, 'Explore the labs'),
         h('a.btn.ghost', { href: '#/coverage' }, 'How it maps to AI-103'),
         h('span.hero-progress', `${done} of ${AGENDA.length} topics completed`))),
     h('section.section.agenda-section',
@@ -77,9 +78,11 @@ export function renderNav(nav, currentHash) {
   clear(nav);
   const p = allProgress();
   
-  nav.appendChild(h('p.nav-label', 'Topics'));
+  nav.appendChild(h('p.nav-label', 'Present'));
+  nav.appendChild(h(`a.nav-link.nav-brief${currentHash.startsWith('#/briefing') ? '.current' : ''}`, { href: '#/briefing' }, 'Exam briefing · 60 min'));
+  nav.appendChild(h('p.nav-label.spaced', 'Topics'));
   nav.appendChild(h('ol.nav-agenda', AGENDA.map((a, i) => h('li', h('a', { href: `#/s/${a.id}`, class: currentHash === `#/s/${a.id}` ? 'current' : null, style: `--topic:${a.color};--topic-2:${a.color2}` },
     h('span.nav-num', String(i + 1).padStart(2, '0')), h('span.nav-text', a.title), isComplete(p[a.id] || {}) ? h('span.nav-done', { title: 'Completed' }, '✓') : null)))));
   nav.appendChild(h('p.nav-label', 'Reference'));
-  nav.appendChild(h('a.nav-link', { href: '#/coverage', class: currentHash === '#/coverage' ? 'current' : null }, 'AI-103 coverage'));
+  nav.appendChild(h(`a.nav-link${currentHash === '#/coverage' ? '.current' : ''}`, { href: '#/coverage' }, 'AI-103 coverage'));
 }
