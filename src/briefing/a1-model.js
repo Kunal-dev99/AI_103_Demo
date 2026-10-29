@@ -61,7 +61,7 @@ export default {
   id: 'model',
   n: 1,
   title: 'Model selection: prebuilt vs custom vs generative',
-  minutes: 12,
+  minutes: 9,
   crux: 'Read the document type and the constraints (labelled data, fixed vs varied layout, implied values, deadline), then pick the least effort model that meets them.',
   rules: [
     ['Common document type (invoice, receipt, ID, W-2) and the standard fields are enough', 'Prebuilt model', 'Fixed schema, no training.'],

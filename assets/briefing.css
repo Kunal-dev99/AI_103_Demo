@@ -50,3 +50,18 @@
 .bz-result p { margin: 0; }
 .nav-label.spaced { margin-top: 22px; }
 .bz-field { min-width: 0; max-width: 100%; } .bz-field select { max-width: 100%; min-width: 0; }
+/* archetype: Content Understanding analyzer builder */
+.bz5-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr); gap: 18px; }
+@media (max-width: 900px) { .bz5-grid { grid-template-columns: minmax(0, 1fr); } }
+.bz5-def { max-height: 380px; font-size: .72rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bz5-fields td, .bz5-fields th { font-size: .82rem; padding: 7px 8px; }
+.bz5-fields tr.miss td { color: var(--muted); background: var(--warn-bg); }
+.bz5-m { font-family: var(--mono); font-size: .72rem; padding: 1px 7px; border-radius: 5px; border: 1px solid var(--border-strong); }
+.bz5-m.m-extract { color: var(--info); border-color: color-mix(in srgb, var(--info) 35%, transparent); }
+.bz5-m.m-classify { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+.bz5-m.m-generate { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+.bz5-md { margin-top: 10px; } .bz5-md summary { font-weight: 500; font-size: .86rem; }
+.bz5-out .alert { margin: 10px 0 0; }
+.bz5-fields td, .bz5-fields th { overflow-wrap: normal; word-break: normal; }
+.bz5-fields td:first-child strong { word-break: break-word; }
+.bz5-m { white-space: nowrap; }
