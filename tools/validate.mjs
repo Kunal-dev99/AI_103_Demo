@@ -142,6 +142,34 @@ for (const id of targets) {
   }
   if (!m.recap || m.recap.length < 60) fail(id, 'recap missing or too short');
 
+  // Guided Azure workflow: the solution path must complete; defaults alone must not.
+  const wfFile = path.join(root, 'src', 'workflow', `${id}.js`);
+  if (!existsSync(wfFile)) fail(id, 'missing guided Azure workflow src/workflow/<id>.js');
+  else {
+    const wf = (await import(pathToFileURL(wfFile).href)).default;
+    const walk = useSolution => {
+      let state = {};
+      for (const st of wf.steps) {
+        const vals = { ...Object.fromEntries((st.fields || []).map(f => [f.id, f.default])), ...(useSolution ? (wf.solution || {})[st.id] || {} : {}) };
+        const missing = (st.fields || []).filter(f => f.required && vals[f.id] === '');
+        if (missing.length) return { failedAt: st.id, reason: `required ${missing.map(f => f.id).join(', ')} not chosen` };
+        let r;
+        try { r = st.run({ ...state }, vals); } catch (e) { return { failedAt: st.id, reason: 'threw ' + e.message, threw: true }; }
+        if (!r || !Array.isArray(r.logs)) return { failedAt: st.id, reason: 'no logs', threw: true };
+        if (!r.ok) { if (!r.error || !r.error.title || !r.error.fix) return { failedAt: st.id, reason: 'failure without error title/fix', threw: true }; return { failedAt: st.id, reason: r.error.title }; }
+        Object.assign(state, r.set || {});
+      }
+      return null;
+    };
+    for (const k of ['title', 'intro', 'goal']) if (!wf[k]) fail(id, `workflow.${k} required`);
+    if (!Array.isArray(wf.steps) || wf.steps.length < 4) fail(id, 'workflow needs at least 4 steps');
+    const sol = walk(true);
+    if (sol) fail(id, `workflow solution fails at step "${sol.failedAt}": ${sol.reason}`);
+    const def = walk(false);
+    if (!def) fail(id, 'workflow completes with defaults alone: make the learner choose');
+    else if (def.threw) fail(id, `workflow defaults path broke at "${def.failedAt}": ${def.reason}`);
+  }
+
   // Exam-style scenarios: each option runs in the lab; exactly one is correct and runs without errors;
   // wrong options must show a visible problem (warn/error) unless they explain why with cleanButWrong.
   if (!Array.isArray(m.scenarios) || m.scenarios.length < 4) fail(id, 'scenarios needs at least 4 exam-style scenarios');

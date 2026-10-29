@@ -3,13 +3,14 @@ import { h, clear, append, fmtValue, animationsSettled } from '../engine/dom.js'
 import { createVisualizer } from '../engine/visualizer.js';
 import { createLab } from '../engine/lab.js';
 import { createExplainer } from '../explainer/engine.js';
+import { createWorkflow } from '../workflow/ui.js';
 import { getProgress, setProgress, isComplete } from '../engine/store.js';
 import { AGENDA, findAgenda, objectiveText } from '../agenda.js';
 import { SOURCE } from '../syllabus.js';
 
 const SECTIONS = [
   ['explain', 'Concept'], ['understand', 'Understand'], ['workbench', 'Workbench'],
-  ['scenarios', 'Exam-style cases'], ['compare', 'Compare'], ['debug', 'Debug'], ['assess', 'Assess'],
+  ['scenarios', 'Exam-style cases'], ['azure', 'Azure workflow'], ['compare', 'Compare'], ['debug', 'Debug'], ['assess', 'Assess'],
 ];
 
 const link = id => {
@@ -31,11 +32,12 @@ function fanout(views) {
 export async function renderTopic(root, id) {
   const meta = findAgenda(id);
   if (!meta) { root.appendChild(h('p', 'Unknown topic.')); return; }
-  let mod, wbMod, scenes = null;
+  let mod, wbMod, scenes = null, workflowDef = null;
   try {
     mod = (await import(`../../content/${id}.js`)).default;
     wbMod = await import(`../workbenches/${mod.workbench}.js`);
     scenes = (await import(`../explainer/${id}.js`).catch(() => ({ default: null }))).default;
+    workflowDef = (await import(`../workflow/${id}.js`).catch(() => ({ default: null }))).default;
   } catch (e) {
     root.appendChild(h('div.alert.tone-error', `The lab for ${id} could not be loaded: ${e.message}`));
     return;
@@ -50,6 +52,7 @@ export async function renderTopic(root, id) {
       h(`span.chip.${p.challenge ? 'tone-ok' : 'tone-muted'}`, p.challenge ? '✓ Challenge' : 'Challenge'),
       h(`span.chip.${p.quizTotal ? 'tone-ok' : 'tone-muted'}`, p.quizTotal ? `Quiz ${p.quizCorrect}/${p.quizTotal}` : 'Quiz'),
       h(`span.chip.${(p.debugSolved || []).length ? 'tone-ok' : 'tone-muted'}`, `Debug ${(p.debugSolved || []).length}/${mod.debug.length}`),
+      getProgress(id).workflow ? h('span.chip.tone-ok', 'Azure workflow ✓') : h('span.chip.tone-muted', 'Azure workflow'),
       mod.scenarios ? h(`span.chip.${(p.scenariosCorrect || []).length ? 'tone-ok' : 'tone-muted'}`, `Scenarios ${(p.scenariosCorrect || []).length}/${mod.scenarios.length}`) : null,
       isComplete(p) ? h('span.chip.tone-ok', '★ Complete') : null]);
   };
@@ -172,6 +175,13 @@ export async function renderTopic(root, id) {
   const scenarios = mod.scenarios ? section('scenarios', 'Practise with exam-style cases',
     h('p.small', 'Short cases in the style of AI-103 questions, written for this site from the official objectives. They are not real exam questions. Each answer is wired to the workbench: choose one and watch what it does.'),
     h('div.sc-list', scenarioCards)) : null;
+
+  // ---- Guided Azure workflow (simulated click-through) ----
+  const workflow = workflowDef ? createWorkflow(workflowDef, { onComplete: () => setProgress(id, { workflow: true }) }) : null;
+  const azure = workflow ? section('azure', workflowDef.title,
+    h('p.small', workflowDef.intro, ' A guided simulation in this site\'s own style: nothing is created in Azure, and commands and IDs are illustrative. Use the Microsoft Learn links on each step for the real thing.'),
+    h('div.btn-row', h('button.btn.ghost.small', { type: 'button', onclick: () => workflow.reset() }, 'Start over')),
+    workflow.el) : null;
 
   // ---- D. compare ----
   const histEl = h('div');
@@ -303,11 +313,11 @@ export async function renderTopic(root, id) {
       h('div', h('h3', 'Go further'), mod.next.length ? h('ul', mod.next.map(p => h('li', link(p)))) : h('p.small', '—'))),
     h('nav.pager', prev ? h('a.btn', { href: `#/s/${prev.id}` }, `‹ ${prev.short}`) : h('span'), next ? h('a.btn', { href: `#/s/${next.id}` }, `${next.short} ›`) : h('span')));
 
-  root.append(header, ...(explain ? [explain] : []), understand, workbench, ...(scenarios ? [scenarios] : []), compare, debug, assess, recap);
+  root.append(header, ...(explain ? [explain] : []), understand, workbench, ...(scenarios ? [scenarios] : []), ...(azure ? [azure] : []), compare, debug, assess, recap);
   return () => { window.removeEventListener('progress', refreshProgress); if (explainer) explainer.stop(); };
 }
 
-const LABELS = { explain: 'Concept', understand: 'Understand', workbench: 'Workbench', scenarios: 'Exam-style cases', compare: 'Experiment', debug: 'Debug', assess: 'Assess' };
+const LABELS = { explain: 'Concept', understand: 'Understand', workbench: 'Workbench', scenarios: 'Exam-style cases', azure: 'Azure workflow', compare: 'Experiment', debug: 'Debug', assess: 'Assess' };
 
 function section(anchor, title, ...kids) {
   return h(`section.section.sec-${anchor}`, { id: `sec-${anchor}`, 'aria-labelledby': `h-${anchor}` },
