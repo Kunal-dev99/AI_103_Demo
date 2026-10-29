@@ -28,7 +28,7 @@ export function createWorkbench(mod) {
       h('div.wb-main', headEl, stageEl, caption, repEl),
       h('aside.wb-side', detail, tb.el)));
 
-  let res = null, params = null, media = null, R = null, timers = [];
+  let res = null, params = null, media = null, R = null, timers = [], lab = null;
   const later = (fn, ms) => timers.push(setTimeout(fn, ms));
   const stopTimers = () => { timers.forEach(clearTimeout); timers = []; };
 
@@ -41,7 +41,12 @@ export function createWorkbench(mod) {
     if (!res) return;
     const v = res.view;
     headEl.append(
-      h('div.mm-mods', { role: 'list', 'aria-label': 'Modalities' }, MODS.map(([id, icon, label]) => h(`span.mm-mod${id === v.modality ? '.on' : ''}`, { role: 'listitem', 'aria-current': id === v.modality ? 'true' : null }, h('b', icon), ' ', label))),
+      h('div.mm-mods', { role: 'group', 'aria-label': 'Switch modality' }, MODS.map(([id, icon, label]) => {
+        const input = (mod.modalityInputs || {})[id];
+        return h(`button.mm-mod${id === v.modality ? '.on' : ''}`, { type: 'button', 'aria-pressed': String(id === v.modality), disabled: !input || !lab,
+          title: `Switch the input to the ${label.toLowerCase()} sample`,
+          onclick: () => { if (id !== v.modality) lab.set({ input }); } }, h('b', icon), ' ', label);
+      })),
       h('div.mm-chips',
         h('span.mm-file', { title: 'Input file' }, '📄 ', v.file),
         h(`span.mm-analyzer${v.custom ? '.custom' : ''}`, { title: 'Analyzer (illustrative id)' }, v.analyzerId)));
@@ -729,6 +734,7 @@ export function createWorkbench(mod) {
     reset() { api.clearRun(); },
     flash(id) { rail.active(id); el.querySelector(`[data-stage="${id}"]`)?.classList.add('flash'); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
     select(id) { rail.active(id); },
+    bindLab(l) { lab = l; drawHead(); },
   };
   idleDetail();
   return api;

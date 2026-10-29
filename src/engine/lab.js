@@ -220,6 +220,12 @@ export function createLab(mod, viz) {
       nowEl.className = 'now';
       nowText('Reset to default settings.');
     },
+    // Change some settings (keeping the rest), e.g. from a control inside the workbench.
+    set(values, run = false) {
+      write(values);
+      paramsChanged();
+      if (run) api.run();
+    },
     load(values, run = false) {
       write({ ...defaults, ...values });
       paramsChanged();
