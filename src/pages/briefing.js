@@ -1,4 +1,4 @@
-// 60-minute exam briefing: the four Document Intelligence question archetypes, in presenting order.
+// 60-minute exam briefing: the opening questions (#/start), then the question archetypes in presenting order.
 import { h, clear, append } from '../engine/dom.js';
 
 const MODULES = ['a1-model', 'a5-cu', 'a2-ingestion', 'a3-security', 'a4-troubleshoot'];
@@ -6,7 +6,7 @@ const pad = n => String(n).padStart(2, '0');
 
 export async function renderBriefing(root) {
   const mods = await Promise.all(MODULES.map(f => import(`../briefing/${f}.js`).then(m => m.default).catch(() => null)));
-  const agenda = [['intro', 'Intro', 4], ...mods.map((m, i) => [`a${i + 1}`, m ? m.title.split(':')[0] : `Archetype ${i + 1}`, m ? m.minutes : 12]), ['wrap', 'Recap', 8]];
+  const agenda = [['intro', 'Opening', 9], ...mods.map((m, i) => [`a${i + 1}`, m ? m.title.split(':')[0] : `Archetype ${i + 1}`, m ? m.minutes : 12]), ['wrap', 'Recap', 6]];
   const total = agenda.reduce((a, x) => a + x[2], 0);
 
   // ---- agenda bar with presenter timer ----
@@ -35,14 +35,13 @@ export async function renderBriefing(root) {
 
   // ---- intro ----
   const intro = h('section.section', { id: 'bf-intro' },
-    h('div.sec-head', h('p.overline', '00 · 4 min'), h('h2', 'How these questions work')),
-    h('p', 'In the AI-103 domain ', h('em', 'Implement information extraction solutions'), ', Document Intelligence and Content Understanding questions are not trivia. Each one is a short scenario with a constraint, and you are asked for the design choice, the integration step or the fix.'),
+    h('div.sec-head', h('p.overline', '00 · 9 min'), h('h2', 'Opening, then how these questions work')),
+    h('div.bf-crux', h('span.overline', 'Minutes 0–8'), h('p', 'Run the six opening questions first: document vs content, how people read, what a computer sees, and why these services exist.'),
+      h('p', h('a.btn.small.primary', { href: '#/start' }, 'Open the opening questions →'))),
+    h('p', h('span.overline', 'Minute 8–9 · bridge'), ' In the AI-103 domain ', h('em', 'Implement information extraction solutions'), ', Document Intelligence and Content Understanding questions are not trivia. Each one is a short scenario with a constraint, and you are asked for the design choice, the integration step or the fix.'),
     h('div.bf-anatomy',
       [['Scenario', 'What documents, what system, who uses it.'], ['Constraint', 'No labelled data, this sprint, tables needed, users upload files, 429 errors…'], ['Crux', 'The one fact that decides the answer.'], ['Answer', 'The least-effort option that satisfies the constraint.']]
         .map(([t, d], i) => h('div', h('span.step-num', pad(i + 1)), h('strong', t), h('span.small', d)))),
-    h('div.bf-archetypes', mods.map((m, i) => h('a.bf-arch', { href: '#/briefing', onclick: e => { e.preventDefault(); document.getElementById(`bf-a${i + 1}`)?.scrollIntoView({ behavior: 'smooth' }); } },
-      h('span.agenda-num', pad(i + 1)), h('strong', m ? m.title : 'Coming soon'), m ? h('span.small', m.crux) : null))),
-    h('p.small', 'Opening the session? Start with ', h('a', { href: '#/start' }, 'the six opening questions'), ': document vs content, how people read, and what problem these services solve.'),
     h('p.small', 'Questions below are written for this briefing in the style of the exam. They are not real exam questions.'));
 
   // ---- archetype modules ----
@@ -67,7 +66,7 @@ export async function renderBriefing(root) {
 
   // ---- wrap-up ----
   const wrap = h('section.section', { id: 'bf-wrap' },
-    h('div.sec-head', h('p.overline', `${pad(mods.length + 1)} · 8 min`), h('h2', 'Checklist & recap')),
+    h('div.sec-head', h('p.overline', `${pad(mods.length + 1)} · ${agenda[agenda.length - 1][2]} min`), h('h2', 'Checklist & recap')),
     h('div.table-wrap', h('table.bf-rules',
       h('thead', h('tr', h('th', 'Area'), h('th', 'What you must be able to do'))),
       h('tbody', [
@@ -84,7 +83,7 @@ export async function renderBriefing(root) {
   root.append(
     h('header.hero', h('p.overline', 'Exam briefing · 60 minutes'),
       h('h1', 'Document Intelligence and Content Understanding on the AI-103 exam'),
-      h('p.hero-lead', 'Five question archetypes, each with its decision rules, a visual you can drive live, and practice questions. Follow the agenda bar; start the timer when you begin.')),
+      h('p.hero-lead', 'The six opening questions, then five question archetypes, each with its decision rules, a visual you can drive live, and practice questions. Follow the agenda bar; start the timer when you begin.')),
     agendaEl, intro, ...sections, wrap);
   return () => { if (timer) clearInterval(timer); };
 }
