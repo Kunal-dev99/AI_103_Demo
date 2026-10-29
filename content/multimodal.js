@@ -565,6 +565,8 @@ export default {
   id: 'multimodal',
   lab: 'Multimodal understanding workspace',
   workbench: 'multimodal',
+  // modality -> input id, so the workbench's modality pills can switch the input
+  modalityInputs: Object.fromEntries(Object.entries(INPUTS).map(([k, v]) => [v.modality, k])),
   services: [
     { name: 'Azure Content Understanding in Foundry Tools: overview', url: 'https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/overview' },
     { name: 'Content Understanding: analyzers and field schemas', url: 'https://learn.microsoft.com/en-us/azure/ai-services/content-understanding/' },

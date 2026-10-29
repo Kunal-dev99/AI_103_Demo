@@ -12,7 +12,9 @@
 /* head */
 .mm-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
 .mm-mods { display: flex; flex-wrap: wrap; gap: 4px; }
-.mm-mod { font-size: .76rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+.mm-mod { font: inherit; font-size: .8rem; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; }
+.mm-mod:hover:not(.on):not(:disabled) { color: var(--text); border-color: var(--border-strong); }
+.mm-mod:disabled { cursor: default; }
 .mm-mod b { font-weight: 700; }
 .mm-mod.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .mm-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }

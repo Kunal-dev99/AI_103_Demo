@@ -102,6 +102,15 @@ for (const id of ids) {
     for (const v of ['architectural', 'implementation', 'conceptual']) await page.click(`.tab[data-view="${v}"]`);
     await page.click('.viz-actions .btn:first-child'); // expand
     await page.click('.viz-node');
+    // multimodal: the modality pills switch the input (and the settings select follows)
+    if (id === 'multimodal') {
+      for (const [label, input] of [['Image', 'parcel'], ['Audio', 'call'], ['Video', 'safety'], ['Document', 'claim']]) {
+        await page.locator('.mm-mod', { hasText: label }).click();
+        const on = await page.locator('.mm-mod.on').innerText();
+        const sel = await page.locator('#ctl-multimodal-input').inputValue();
+        if (!on.includes(label) || sel !== input) failures.push(`multimodal: ${label} pill did not switch the input (pill "${on}", select "${sel}")`);
+      }
+    }
     // run instantly
     await page.selectOption('.lab select[aria-label="Animation speed"]', '0');
     await page.click('.lab .btn.primary');

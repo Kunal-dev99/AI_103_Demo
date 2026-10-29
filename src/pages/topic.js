@@ -98,6 +98,7 @@ export async function renderTopic(root, id) {
   const graph = createVisualizer(mod);
   const viz = fanout([wb, graph]);
   const lab = createLab(mod, viz);
+  if (wb.bindLab) wb.bindLab(lab);
 
   const workbench = section('workbench', mod.lab,
     h('p.small.wb-intro', 'Press Run to play every stage, or Next step to go one stage at a time while you explain. Click anything in the workbench to inspect it. Scenarios and ⚙ Settings change the input.'),
