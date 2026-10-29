@@ -896,3 +896,47 @@ main:focus, main:focus-visible { outline: none; }
 /* default accent outside a topic follows the text colour (works in light and dark) */
 :root, .home-hero { --topic: var(--text); --topic-2: var(--muted); }
 .section .overline { color: var(--topic); }
+
+/* ---------- guided Azure workflow ---------- */
+.workflow { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.wf-goal { display: flex; gap: 12px; align-items: baseline; padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.wf-goal p { margin: 0; font-weight: 500; }
+.wf-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr) minmax(260px, 340px); }
+@media (max-width: 1100px) { .wf-grid { grid-template-columns: 200px minmax(0, 1fr); } .wf-side { grid-column: 1 / -1; border-left: 0 !important; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; } }
+@media (max-width: 720px) { .wf-grid { grid-template-columns: minmax(0, 1fr); } .wf-nav { border-right: 0 !important; border-bottom: 1px solid var(--border); } .wf-side { grid-template-columns: minmax(0, 1fr); } }
+.wf-nav { border-right: 1px solid var(--border); padding: 12px 8px; }
+.wf-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.wf-step button { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; font: inherit; font-size: .86rem; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+.wf-step button:disabled { opacity: .45; cursor: default; }
+.wf-step button:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.wf-step.cur button { background: var(--surface-2); color: var(--text); font-weight: 500; box-shadow: inset 2px 0 0 var(--topic); }
+.wf-num { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; font-family: var(--mono); font-size: .72rem; border: 1px solid var(--border-strong); }
+.wf-step.done .wf-num { background: var(--ok); color: #fff; border-color: var(--ok); }
+.wf-step.failed .wf-num { background: var(--error); color: #fff; border-color: var(--error); }
+.wf-step.cur .wf-num { border-color: var(--topic); color: var(--topic); }
+.wf-main { padding: 20px 22px; min-width: 0; }
+.wf-main h3 { margin: 2px 0 6px; font-size: 1.15rem; }
+.wf-why { color: var(--muted); line-height: 1.6; max-width: 640px; }
+.wf-form { display: grid; gap: 14px; margin-top: 14px; max-width: 560px; }
+.wf-field label { display: block; font-weight: 500; font-size: .88rem; margin-bottom: 4px; }
+.wf-field select, .wf-field input[type=text], .wf-field textarea { width: 100%; }
+.wf-toggle label { display: flex; gap: 8px; align-items: center; }
+.wf-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.wf-hint summary { font-size: .82rem; color: var(--muted); font-weight: 500; }
+.wf-msg .alert { margin: 0; }
+.wf-docs { margin-top: 16px; }
+.wf-done { margin-top: 16px; }
+.wf-side { border-left: 1px solid var(--border); background: var(--surface-2); min-width: 0; }
+.wf-box { padding: 12px 14px; border-bottom: 1px solid var(--border); min-width: 0; }
+.wf-box-head { display: flex; justify-content: space-between; align-items: center; font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.wf-console { background: #111114; color: #d6d6dc; border-radius: 10px; padding: 10px 12px; font-family: var(--mono); font-size: .74rem; height: 300px; overflow: auto; }
+.wf-console .small { color: #8b8b94; }
+.wf-log-head { color: #8b8b94; margin: 8px 0 4px; font-size: .72rem; }
+.wf-log { margin: 0 0 4px; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); opacity: 0; animation: exin .3s ease forwards; }
+.wf-log.cmd { color: #9cc4ff; } .wf-log.out { color: #d6d6dc; } .wf-log.err { color: #ff9a92; } .wf-log.info { color: #e8c37a; }
+.wf-tree, .wf-tree ul { list-style: none; margin: 0; padding: 0; }
+.wf-tree ul { padding-left: 14px; border-left: 1px solid var(--border-strong); margin-left: 6px; }
+.wf-tree li { padding: 4px 0 4px 8px; font-size: .82rem; animation: exin .3s ease; }
+.wf-rtype { display: block; font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.wf-rname { font-family: var(--mono); font-size: .8rem; }
+.wf-rmeta { margin-left: 6px; font-size: .72rem; color: var(--muted); }

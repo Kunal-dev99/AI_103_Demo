@@ -107,6 +107,21 @@ for (const id of ids) {
       await page.waitForFunction(() => /Correct ·/.test(document.querySelector('.scenario-banner').textContent), null, { timeout: 15000 })
         .catch(() => failures.push(`${id}: scenario ${i + 1} correct option did not show a Correct verdict`));
     }
+    // guided Azure workflow: click through the solution path and expect completion
+    const wf = (await import(path.join(root, 'src', 'workflow', `${id}.js`))).default;
+    for (const [si, st] of wf.steps.entries()) {
+      for (const [f, v] of Object.entries((wf.solution || {})[st.id] || {})) {
+        const sel = `#wf-${st.id}-${f}`;
+        const fdef = st.fields.find(x => x.id === f);
+        if (fdef.type === 'toggle') await page.setChecked(sel, !!v);
+        else if (fdef.type === 'select') await page.selectOption(sel, String(v));
+        else await page.fill(sel, String(v));
+      }
+      await page.click('.wf-form .btn.primary');
+      if (si < wf.steps.length - 1) await page.locator('.wf-actions button', { hasText: 'Next step' }).click({ timeout: 5000 })
+        .catch(() => failures.push(`${id}: workflow step "${st.id}" did not succeed in the UI`));
+    }
+    if (!(await page.locator('.wf-done:not([hidden])').count())) failures.push(`${id}: workflow did not complete in the UI`);
     if (shots) await page.screenshot({ path: path.join(shots, `${id}.png`), fullPage: false });
   } catch (e) {
     failures.push(`${id}: ${e.message.split('\n')[0]}`);

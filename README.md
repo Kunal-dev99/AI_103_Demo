@@ -36,6 +36,7 @@ python3 -m http.server 8080      # or: npm start
 | B–C. Visualize & simulate | The **workbench** shows the actual document, inbox, image, audio or video as each stage runs. Run plays everything; Step advances one stage. Click anything in the workbench to inspect it. Controls, step log, measurements and result tables sit underneath; architecture and code views are in a collapsible panel |
 | D. Experiment & compare | Suggested experiments; every run is recorded; diff any two runs |
 | E. Debug | Deliberately broken configurations. Load one, see the symptom, fix it with the controls |
+| Azure workflow | A guided click-through of the real sequence in Azure — create the Foundry resource, grant a data-plane role, connect model deployments, create or pick the analyzer, call it, read the result — with a simulated console and resource tree. Mistakes fail where they would for real (403, 409, unreadable blob). In the site's own style; nothing is created in Azure |
 | F. Apply & assess | A challenge with a checked completion condition, a solution walkthrough after the first attempt, and a scenario quiz |
 
 ## Project layout
