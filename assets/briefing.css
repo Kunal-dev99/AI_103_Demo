@@ -49,3 +49,4 @@
 .bz-result { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: var(--ok-bg); border: 1px solid color-mix(in srgb, var(--ok) 25%, transparent); }
 .bz-result p { margin: 0; }
 .nav-label.spaced { margin-top: 22px; }
+.bz-field { min-width: 0; max-width: 100%; } .bz-field select { max-width: 100%; min-width: 0; }
